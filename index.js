@@ -1,0 +1,1422 @@
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 بدء تحميل التطبيق...");
+
+  // ======================= تهيئة Supabase =======================
+  const SUPABASE_URL = "https://ujbwtefoxgzjdtcrgfhp.supabase.co";
+  const SUPABASE_ANON_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqYnd0ZWZveGd6amR0Y3JnZmhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3ODgxMzIsImV4cCI6MjA4MTM2NDEzMn0.p5mLeDn6QCJTiiV_1cx14L_eYaGBRn0BkKsLeh5my30";
+
+  console.log("📡 تهيئة اتصال Supabase...");
+  const supabase = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  let currentUser = null;
+  let currentReviewsProduct = null;
+
+  // ======================= تهيئة التطبيق =======================
+  async function initApp() {
+    console.log("🔄 بدء تهيئة التطبيق...");
+    showLoadingScreen();
+
+    try {
+      console.log("🔐 التحقق من تسجيل الدخول...");
+      const isAuthenticated = await checkAuth();
+      console.log(`✅ حالة المصادقة: ${isAuthenticated ? "مسجل" : "غير مسجل"}`);
+
+      console.log("📊 اختبار اتصال Supabase...");
+      await testSupabaseConnection();
+
+      console.log("🎨 تهيئة المكونات...");
+      initHeroSlider();
+      initCounters();
+      initProductSliders();
+      initCardAnimations();
+      initReviewsSystem();
+      initModals();
+      initNavigation();
+
+      console.log("✅ تم تهيئة جميع المكونات بنجاح");
+    } catch (error) {
+      console.error("❌ خطأ في تهيئة التطبيق:", error);
+      showNotification("حدث خطأ في تهيئة التطبيق", "error");
+    } finally {
+      hideLoadingScreen();
+      console.log("🏁 اكتملت تهيئة التطبيق");
+    }
+  }
+
+  // ======================= نظام الإشعارات =======================
+  function showNotification(message, type = "success") {
+    console.log(`📢 إشعار [${type}]: ${message}`);
+    const notification = document.getElementById("notification");
+    const notificationText = notification.querySelector(".notification-text");
+
+    notification.className = `notification ${type}`;
+    notificationText.textContent = message;
+
+    const icon = notification.querySelector("i");
+    switch (type) {
+      case "success":
+        icon.className = "fas fa-check-circle";
+        break;
+      case "error":
+        icon.className = "fas fa-exclamation-circle";
+        break;
+      case "info":
+        icon.className = "fas fa-info-circle";
+        break;
+      default:
+        icon.className = "fas fa-bell";
+    }
+
+    notification.classList.add("show");
+
+    setTimeout(() => {
+      notification.classList.remove("show");
+    }, 4000);
+  }
+
+  // ======================= شاشة التحميل =======================
+  function showLoadingScreen() {
+    const loadingScreen = document.getElementById("loading-screen");
+    if (loadingScreen) {
+      console.log("⏳ عرض شاشة التحميل...");
+      loadingScreen.classList.add("is-active");
+    }
+  }
+
+  function hideLoadingScreen() {
+    const loadingScreen = document.getElementById("loading-screen");
+    if (loadingScreen) {
+      console.log("✅ إخفاء شاشة التحميل...");
+      loadingScreen.classList.remove("is-active");
+    }
+  }
+
+  // ======================= نظام المستخدم =======================
+  async function checkAuth() {
+    try {
+      console.log("🔍 فحص تخزين المستخدم المحلي...");
+      const storedUser = localStorage.getItem("user");
+
+      if (storedUser) {
+        console.log("👤 تم العثور على مستخدم في التخزين المحلي");
+        currentUser = JSON.parse(storedUser);
+
+        // التحقق من أن المستخدم له id
+        if (!currentUser.id) {
+          console.warn(
+            "⚠️ المستخدم المخزن محلياً لا يحتوي على ID، سيتم تسجيل الخروج"
+          );
+          updateUIForLoggedOutUser();
+          return false;
+        }
+
+        // محاولة التحقق من قاعدة البيانات
+        try {
+          const { data: userFromDB, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", currentUser.id)
+            .single();
+
+          if (error || !userFromDB) {
+            console.warn(
+              "⚠️ المستخدم غير موجود في قاعدة البيانات، سيتم تسجيل الخروج"
+            );
+            updateUIForLoggedOutUser();
+            return false;
+          }
+
+          // تحديث بيانات المستخدم من قاعدة البيانات
+          currentUser = { ...currentUser, ...userFromDB };
+          localStorage.setItem("user", JSON.stringify(currentUser));
+        } catch (dbError) {
+          console.warn(
+            "⚠️ لا يمكن الاتصال بقاعدة البيانات للتحقق:",
+            dbError.message
+          );
+          // نستمر باستخدام البيانات المحلية
+        }
+
+        await updateUIForLoggedInUser();
+        return true;
+      }
+
+      console.log("👤 لا يوجد مستخدم مسجل");
+      updateUIForLoggedOutUser();
+      return false;
+    } catch (error) {
+      console.error("❌ خطأ في التحقق من المصادقة:", error);
+      updateUIForLoggedOutUser();
+      return false;
+    }
+  }
+
+  async function updateUIForLoggedInUser() {
+    console.log("🎨 تحديث الواجهة للمستخدم المسجل...");
+    const guestUser = document.getElementById("guestUser");
+    const loggedInUser = document.getElementById("loggedInUser");
+    const ctaButton = document.getElementById("ctaButton");
+
+    if (guestUser) guestUser.style.display = "none";
+    if (loggedInUser) loggedInUser.style.display = "flex";
+
+    const displayUserName = document.getElementById("displayUserName");
+    const dropdownUserName = document.getElementById("dropdownUserName");
+    const dropdownUserEmail = document.getElementById("dropdownUserEmail");
+    const userAvatar = document.getElementById("currentUserAvatar");
+    const dropdownAvatar = document.getElementById("dropdownAvatar");
+
+    if (currentUser) {
+      console.log(`👋 تحديث بيانات المستخدم: ${currentUser.full_name}`);
+
+      if (displayUserName) displayUserName.textContent = currentUser.full_name;
+      if (dropdownUserName)
+        dropdownUserName.textContent = currentUser.full_name;
+      if (dropdownUserEmail)
+        dropdownUserEmail.textContent =
+          currentUser.email || currentUser.phone + "@temp.com";
+
+      const avatarSrc = currentUser.avatar || "11.svg";
+      if (userAvatar) userAvatar.src = avatarSrc;
+      if (dropdownAvatar) dropdownAvatar.src = avatarSrc;
+    }
+
+    if (ctaButton && currentUser) {
+      const firstName = currentUser.full_name.split(" ")[0];
+      ctaButton.innerHTML = `<i class="fas fa-user-circle" style="margin-left: 8px"></i>مرحباً ${firstName}`;
+      ctaButton.classList.add("registered");
+      ctaButton.href = "#";
+      ctaButton.onclick = (e) => {
+        e.preventDefault();
+        showNotification("أنت مسجل بالفعل!", "info");
+      };
+    }
+
+    initDropdown();
+  }
+
+  function updateUIForLoggedOutUser() {
+    console.log("🎨 تحديث الواجهة للمستخدم غير المسجل...");
+    const guestUser = document.getElementById("guestUser");
+    const loggedInUser = document.getElementById("loggedInUser");
+    const ctaButton = document.getElementById("ctaButton");
+
+    if (guestUser) guestUser.style.display = "flex";
+    if (loggedInUser) loggedInUser.style.display = "none";
+
+    if (ctaButton) {
+      ctaButton.innerHTML = "ابدأ الآن";
+      ctaButton.classList.remove("registered");
+      ctaButton.href = "store.html";
+      ctaButton.onclick = null;
+    }
+
+    currentUser = null;
+    localStorage.removeItem("user");
+  }
+
+  // ======================= Dropdown المستخدم =======================
+  function initDropdown() {
+    const userProfileBtn = document.getElementById("userProfileBtn");
+    const dropdownMenu = document.getElementById("dropdownMenu");
+
+    if (!userProfileBtn || !dropdownMenu) {
+      console.warn("⚠️ عناصر Dropdown غير موجودة");
+      return;
+    }
+
+    userProfileBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isActive = userProfileBtn.classList.contains("active");
+      closeAllDropdowns();
+      if (!isActive) {
+        userProfileBtn.classList.add("active");
+        dropdownMenu.classList.add("active");
+        console.log("📂 فتح قائمة Dropdown");
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (
+        !userProfileBtn.contains(e.target) &&
+        !dropdownMenu.contains(e.target)
+      ) {
+        closeAllDropdowns();
+      }
+    });
+
+    dropdownMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  }
+
+  function closeAllDropdowns() {
+    const userProfileBtn = document.getElementById("userProfileBtn");
+    const dropdownMenu = document.getElementById("dropdownMenu");
+    if (userProfileBtn) userProfileBtn.classList.remove("active");
+    if (dropdownMenu) dropdownMenu.classList.remove("active");
+  }
+
+  // ======================= سلايدر Hero التلقائي =======================
+  function initHeroSlider() {
+    console.log("🖼️ تهيئة سلايدر Hero...");
+    const heroSliderImages = document.querySelectorAll(
+      ".hero-slider .slider-image"
+    );
+    const heroSliderDots = document.querySelectorAll(".hero-slider .dot");
+
+    if (heroSliderImages.length === 0) {
+      console.warn("⚠️ لا توجد صور في سلايدر Hero");
+      return;
+    }
+
+    let currentSlide = 0;
+    const slideInterval = 5000;
+
+    function showHeroSlide(index) {
+      heroSliderImages.forEach((img) => img.classList.remove("active"));
+      heroSliderDots.forEach((dot) => dot.classList.remove("active"));
+
+      heroSliderImages[index].classList.add("active");
+      heroSliderDots[index].classList.add("active");
+      currentSlide = index;
+    }
+
+    function nextHeroSlide() {
+      const nextIndex = (currentSlide + 1) % heroSliderImages.length;
+      showHeroSlide(nextIndex);
+    }
+
+    let heroSlideTimer = setInterval(nextHeroSlide, slideInterval);
+
+    heroSliderDots.forEach((dot) => {
+      dot.addEventListener("click", function () {
+        const index = parseInt(this.getAttribute("data-index"));
+        clearInterval(heroSlideTimer);
+        showHeroSlide(index);
+        heroSlideTimer = setInterval(nextHeroSlide, slideInterval);
+      });
+    });
+
+    console.log(`✅ تم تهيئة سلايدر Hero مع ${heroSliderImages.length} صور`);
+  }
+
+  // ======================= العدادات المتحركة =======================
+  function initCounters() {
+    console.log("🔢 تهيئة العدادات...");
+    const counters = document.querySelectorAll(".counter");
+    const aboutSection = document.getElementById("about");
+    const aboutImage = document.querySelector(".about-image");
+
+    if (counters.length === 0) {
+      console.warn("⚠️ لا توجد عدادات للتهيئة");
+      return;
+    }
+
+    let hasAnimated = false;
+
+    function animateCounter(counter) {
+      const target = +counter.getAttribute("data-target");
+      const duration = 1500;
+      const startTime = performance.now();
+
+      function updateCount(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const value = Math.floor(progress * target);
+
+        counter.innerText = value.toLocaleString();
+
+        if (progress < 1) {
+          requestAnimationFrame(updateCount);
+        } else {
+          counter.innerText = target.toLocaleString();
+        }
+      }
+      requestAnimationFrame(updateCount);
+    }
+
+    const aboutObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (!hasAnimated) {
+              console.log("🎬 تشغيل حركة العدادات...");
+              counters.forEach(animateCounter);
+              if (aboutImage) {
+                aboutImage.style.opacity = 1;
+                aboutImage.classList.add("animate-from-bottom");
+              }
+              hasAnimated = true;
+            }
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    if (aboutSection) {
+      aboutObserver.observe(aboutSection);
+      console.log("👀 مراقبة قسم about للعدادات");
+    }
+  }
+
+  // ======================= سلايدر صور المنتجات =======================
+  function initProductSliders() {
+    console.log("🖼️ تهيئة سلايدر المنتجات...");
+    const productCards = document.querySelectorAll(
+      ".product-card[data-product-id]"
+    );
+
+    if (productCards.length === 0) {
+      console.warn("⚠️ لا توجد بطاقات منتجات للتهيئة");
+      return;
+    }
+
+    function showProductSlide(productId, step) {
+      const sliderWrapper = document.querySelector(
+        `.product-image-slider[data-product-id="${productId}"]`
+      );
+
+      if (!sliderWrapper) {
+        console.warn(`⚠️ لم يتم العثور على سلايدر للمنتج ${productId}`);
+        return;
+      }
+
+      const images = sliderWrapper.querySelectorAll(".product-image");
+      let currentIndex = 0;
+
+      images.forEach((img, index) => {
+        if (img.classList.contains("active")) {
+          currentIndex = index;
+        }
+        img.classList.remove("active");
+      });
+
+      let newIndex = currentIndex + step;
+      if (newIndex >= images.length) {
+        newIndex = 0;
+      } else if (newIndex < 0) {
+        newIndex = images.length - 1;
+      }
+
+      images[newIndex].classList.add("active");
+    }
+
+    productCards.forEach((card) => {
+      const productId = card.getAttribute("data-product-id");
+      const prevBtn = card.querySelector(".prev-btn");
+      const nextBtn = card.querySelector(".next-btn");
+
+      if (prevBtn) {
+        prevBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          showProductSlide(productId, -1);
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          showProductSlide(productId, 1);
+        });
+      }
+    });
+
+    console.log(`✅ تم تهيئة سلايدرات ${productCards.length} منتج`);
+  }
+
+  // ======================= حركات ظهور الكروت =======================
+  function initCardAnimations() {
+    console.log("🎭 تهيئة حركات الكروت...");
+    const cardsToAnimate = document.querySelectorAll(
+      ".course-card, .product-card"
+    );
+
+    if (cardsToAnimate.length === 0) {
+      console.warn("⚠️ لا توجد كروت للتحريك");
+      return;
+    }
+
+    const cardObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const card = entry.target;
+            const delay = card.getAttribute("data-delay") || "0";
+
+            setTimeout(() => {
+              card.classList.add("visible");
+            }, delay);
+
+            observer.unobserve(card);
+          }
+        });
+      },
+      {
+        rootMargin: "0px",
+        threshold: 0.1,
+      }
+    );
+
+    cardsToAnimate.forEach((card, index) => {
+      const delay = index * 100;
+      card.setAttribute("data-delay", delay);
+      cardObserver.observe(card);
+    });
+
+    console.log(`✅ تم تهيئة حركات ${cardsToAnimate.length} كرت`);
+  }
+
+  // ======================= نظام الانتقال =======================
+  function initNavigation() {
+    console.log("🧭 تهيئة نظام الانتقال...");
+    const loadingScreen = document.getElementById("loading-screen");
+    const navLinks = document.querySelectorAll(".nav-links a.nav-item");
+
+    if (navLinks.length === 0) {
+      console.warn("⚠️ لا توجد روابط تنقل للتهيئة");
+      return;
+    }
+
+    navLinks.forEach((link) => {
+      link.addEventListener("click", function (e) {
+        if (this.classList.contains("active")) {
+          e.preventDefault();
+          return;
+        }
+
+        e.preventDefault();
+        const targetUrl = this.href;
+        console.log(`➡️ الانتقال إلى: ${targetUrl}`);
+
+        if (loadingScreen) {
+          loadingScreen.classList.add("is-active");
+        }
+
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 500);
+      });
+    });
+
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        if (loadingScreen) {
+          loadingScreen.classList.remove("is-active");
+        }
+      }, 100);
+    });
+  }
+
+  // ======================= نظام المراجعات =======================
+  function initReviewsSystem() {
+    console.log("⭐ تهيئة نظام المراجعات...");
+
+    // مستمعين لزر المراجعات
+    document.addEventListener("click", (e) => {
+      if (
+        e.target.classList.contains("reviews-btn") ||
+        e.target.closest(".reviews-btn")
+      ) {
+        const button = e.target.closest(".reviews-btn");
+        const productCard = button.closest(".product-card");
+        const productId = productCard?.getAttribute("data-product-id");
+        const productTitle =
+          productCard?.querySelector(".product-title")?.textContent;
+
+        if (productId && productTitle) {
+          console.log(`📝 فتح مراجعات المنتج: ${productTitle} (${productId})`);
+          openReviewsModal(productId, productTitle);
+        } else {
+          console.warn("⚠️ لم يتم العثور على بيانات المنتج");
+        }
+      }
+    });
+
+    // مستمعين لتقييم النجوم
+    document.addEventListener("click", (e) => {
+      if (
+        e.target.classList.contains("stars-input") ||
+        e.target.closest(".stars-input i")
+      ) {
+        const star =
+          e.target.tagName === "I" ? e.target : e.target.closest("i");
+        if (!star) return;
+
+        const rating = parseInt(star.getAttribute("data-rating"));
+        window.currentRating = rating;
+        console.log(`⭐ تم اختيار تقييم: ${rating} نجوم`);
+
+        // تحديث النجوم
+        const stars = document.querySelectorAll(".stars-input i");
+        stars.forEach((s, index) => {
+          s.className = index < rating ? "fas fa-star" : "far fa-star";
+        });
+
+        document.getElementById("selectedRating").textContent = rating;
+      }
+    });
+
+    // زر إرسال المراجعة
+    const submitBtn = document.getElementById("submitReviewBtn");
+    if (submitBtn) {
+      submitBtn.addEventListener("click", submitReview);
+      console.log("✅ تم إعداد زر إرسال المراجعة");
+    } else {
+      console.warn("⚠️ زر إرسال المراجعة غير موجود");
+    }
+  }
+
+  // ======================= نظام المودالات =======================
+  function initModals() {
+    console.log("🗂️ تهيئة نظام المودالات...");
+
+    // إعداد جميع أزرار الإغلاق (X)
+    const closeBtns = document.querySelectorAll(".close-btn");
+    closeBtns.forEach((btn) => {
+      btn.addEventListener("click", function () {
+        console.log("❌ النقر على زر الإغلاق");
+        // إغلاق المودال الأقرب
+        const modal = this.closest(".modal");
+        if (modal) {
+          closeModal(modal);
+        }
+      });
+    });
+
+    // مودال تسجيل الدخول والتسجيل
+    const loginModal = document.getElementById("loginModal");
+    const openLoginBtn = document.getElementById("openLoginModalBtn");
+
+    // فتح مودال تسجيل الدخول
+    if (openLoginBtn) {
+      openLoginBtn.addEventListener("click", () => {
+        if (currentUser) {
+          showNotification("أنت مسجل الدخول بالفعل!", "info");
+          return;
+        }
+        console.log("🔓 فتح مودال تسجيل الدخول والتسجيل");
+        openModal(loginModal);
+
+        // إظهار نموذج تسجيل الدخول افتراضياً
+        showLoginForm();
+      });
+    } else {
+      console.warn("⚠️ زر فتح مودال تسجيل الدخول غير موجود");
+    }
+
+    // إغلاق عند النقر خارج المودال
+    window.addEventListener("click", (event) => {
+      if (event.target.classList.contains("modal")) {
+        console.log("📌 النقر خارج المودال، إغلاقه");
+        closeModal(event.target);
+      }
+    });
+
+    // أزرار التبديل بين التسجيل وتسجيل الدخول
+    const showLoginBtn = document.getElementById("showLoginBtn");
+    const showRegisterBtn = document.getElementById("showRegisterBtn");
+
+    if (showLoginBtn) {
+      showLoginBtn.addEventListener("click", showLoginForm);
+    }
+
+    if (showRegisterBtn) {
+      showRegisterBtn.addEventListener("click", showRegisterForm);
+    }
+
+    // مودال الإعدادات
+    const settingsModal = document.getElementById("settingsModal");
+    const openSettingsBtn = document.getElementById("openSettingsModalBtn");
+
+    if (openSettingsBtn) {
+      openSettingsBtn.addEventListener("click", () => {
+        if (!currentUser) {
+          showNotification("يجب تسجيل الدخول أولاً!", "error");
+          return;
+        }
+        console.log("⚙️ فتح مودال الإعدادات");
+        openSettingsModal();
+      });
+    }
+
+    // مستمعين للنماذج
+    const registerFormElement = document.getElementById("registerFormElement");
+    const loginFormElement = document.getElementById("loginFormElement");
+    const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+
+    if (registerFormElement) {
+      console.log("✅ إعداد نموذج التسجيل");
+      registerFormElement.addEventListener("submit", handleRegister);
+    } else {
+      console.warn("⚠️ نموذج التسجيل غير موجود");
+    }
+
+    if (loginFormElement) {
+      console.log("✅ إعداد نموذج تسجيل الدخول");
+      loginFormElement.addEventListener("submit", handleLogin);
+    } else {
+      console.warn("⚠️ نموذج تسجيل الدخول غير موجود");
+    }
+
+    if (saveSettingsBtn) {
+      console.log("✅ إعداد زر حفظ الإعدادات");
+      saveSettingsBtn.addEventListener("click", handleSaveSettings);
+    } else {
+      console.warn("⚠️ زر حفظ الإعدادات غير موجود");
+    }
+
+    console.log("✅ تم تهيئة جميع المودالات");
+  }
+
+  // ======================= وظائف المودالات =======================
+  function openModal(modal) {
+    if (!modal) {
+      console.warn("⚠️ محاولة فتح مودال غير موجود");
+      return;
+    }
+
+    console.log(`📂 فتح مودال: ${modal.id}`);
+    modal.classList.add("active");
+    document.body.classList.add("modal-open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(modal) {
+    if (!modal) {
+      console.warn("⚠️ محاولة إغلاق مودال غير موجود");
+      return;
+    }
+
+    console.log(`📂 إغلاق مودال: ${modal.id}`);
+    modal.classList.remove("active");
+    document.body.classList.remove("modal-open");
+    document.body.style.overflow = "auto";
+  }
+
+  // ======================= وظائف التبديل بين التسجيل والدخول =======================
+  function showLoginForm() {
+    console.log("🔐 إظهار نموذج تسجيل الدخول");
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const showLoginBtn = document.getElementById("showLoginBtn");
+    const showRegisterBtn = document.getElementById("showRegisterBtn");
+
+    if (loginForm) loginForm.style.display = "block";
+    if (registerForm) registerForm.style.display = "none";
+
+    // تحديث حالة الأزرار
+    if (showLoginBtn) showLoginBtn.classList.add("active");
+    if (showRegisterBtn) showRegisterBtn.classList.remove("active");
+  }
+
+  function showRegisterForm() {
+    console.log("📝 إظهار نموذج التسجيل");
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const showLoginBtn = document.getElementById("showLoginBtn");
+    const showRegisterBtn = document.getElementById("showRegisterBtn");
+
+    if (loginForm) loginForm.style.display = "none";
+    if (registerForm) registerForm.style.display = "block";
+
+    // تحديث حالة الأزرار
+    if (showLoginBtn) showLoginBtn.classList.remove("active");
+    if (showRegisterBtn) showRegisterBtn.classList.add("active");
+  }
+
+  // ======================= فتح مودال الإعدادات =======================
+  async function openSettingsModal() {
+    if (!currentUser) {
+      console.warn("⚠️ محاولة فتح الإعدادات بدون مستخدم");
+      return;
+    }
+
+    console.log(`⚙️ تحميل إعدادات المستخدم: ${currentUser.full_name}`);
+
+    // تعبئة البيانات
+    document.getElementById("settingsFullName").value = currentUser.full_name;
+    document.getElementById("settingsPhone").value = currentUser.phone;
+    document.getElementById("settingsEmail").value = currentUser.email || "";
+    document.getElementById("settingsPassword").value = "";
+
+    // تعيين الصورة
+    const avatarPreview = document.getElementById("avatarPreview");
+    if (avatarPreview) {
+      avatarPreview.src = currentUser.avatar || "11.svg";
+    }
+
+    // تحديد الصورة الحالية
+    const avatarOptions = document.querySelectorAll(".avatar-option");
+    avatarOptions.forEach((option) => {
+      option.classList.remove("selected");
+      const avatarSrc = option.getAttribute("data-avatar");
+      if (avatarSrc === currentUser.avatar) {
+        option.classList.add("selected");
+      }
+    });
+
+    // إعداد رفع الصورة
+    const avatarUpload = document.getElementById("avatarUpload");
+    const avatarUploadContainer = document.querySelector(
+      ".avatar-upload-container"
+    );
+
+    if (avatarUpload && avatarUploadContainer) {
+      // إزالة المستمعين القديمين لمنع التكرار
+      const newContainer = avatarUploadContainer.cloneNode(true);
+      avatarUploadContainer.parentNode.replaceChild(
+        newContainer,
+        avatarUploadContainer
+      );
+
+      const newUpload = document.getElementById("avatarUpload");
+
+      newContainer.addEventListener("click", () => {
+        console.log("🖼️ فتح نافذة اختيار الصورة");
+        newUpload.click();
+      });
+
+      newUpload.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        console.log(`📄 محاولة رفع ملف: ${file?.name}`);
+
+        if (file && file.size < 5 * 1024 * 1024) {
+          if (!file.type.startsWith("image/")) {
+            showNotification("الرجاء رفع صورة فقط!", "error");
+            return;
+          }
+
+          try {
+            showLoadingScreen();
+            console.log("⬆️ بدء رفع الصورة إلى Supabase Storage...");
+
+            // رفع الصورة إلى Supabase Storage
+            const fileExt = file.name.split(".").pop();
+            const fileName = `${currentUser.id}_${Date.now()}.${fileExt}`;
+
+            const { data, error } = await supabase.storage
+              .from("avatars")
+              .upload(`public/${fileName}`, file, {
+                cacheControl: "3600",
+                upsert: true,
+              });
+
+            if (error) throw error;
+            console.log("✅ تم رفع الصورة بنجاح");
+
+            // الحصول على رابط الصورة
+            const {
+              data: { publicUrl },
+            } = supabase.storage
+              .from("avatars")
+              .getPublicUrl(`public/${fileName}`);
+
+            console.log(`🔗 رابط الصورة: ${publicUrl}`);
+
+            // تحديث المستخدم في قاعدة البيانات
+            const { error: updateError } = await supabase
+              .from("users")
+              .update({ avatar: publicUrl })
+              .eq("id", currentUser.id);
+
+            if (updateError) throw updateError;
+            console.log("✅ تم تحديث بيانات المستخدم في قاعدة البيانات");
+
+            // تحديث بيانات المستخدم الحالي
+            currentUser.avatar = publicUrl;
+            localStorage.setItem("user", JSON.stringify(currentUser));
+
+            // تحديث الصورة في الواجهة
+            avatarPreview.src = publicUrl;
+
+            showNotification("تم رفع وتحديث الصورة بنجاح!", "success");
+          } catch (error) {
+            console.error("❌ خطأ في رفع الصورة:", error);
+            showNotification("فشل رفع الصورة!", "error");
+          } finally {
+            hideLoadingScreen();
+          }
+        } else {
+          showNotification("حجم الصورة كبير جداً! الحد الأقصى 5MB", "error");
+        }
+      });
+    }
+
+    // إضافة مستمعين للصور المحددة مسبقاً
+    avatarOptions.forEach((option) => {
+      option.addEventListener("click", function () {
+        const avatarSrc = this.getAttribute("data-avatar");
+        console.log(`🖼️ اختيار صورة: ${avatarSrc}`);
+
+        // إزالة التحديد من الجميع
+        avatarOptions.forEach((opt) => opt.classList.remove("selected"));
+
+        // إضافة التحديد للصورة المختارة
+        this.classList.add("selected");
+
+        // حفظ الصورة المختارة مؤقتاً
+        window.selectedAvatar = avatarSrc;
+      });
+    });
+
+    openModal(settingsModal);
+  }
+
+  function closeSettingsModal() {
+    closeModal(document.getElementById("settingsModal"));
+  }
+
+  // ======================= فتح مودال المراجعات =======================
+  function openReviewsModal(productId, productTitle) {
+    currentReviewsProduct = { id: productId, title: productTitle };
+    console.log(`📝 فتح مراجعات المنتج: ${productTitle} (${productId})`);
+
+    // تعيين عنوان المنتج
+    document.getElementById("reviewsProductTitle").textContent = productTitle;
+
+    // إظهار/إخفاء قسم كتابة مراجعة
+    const writeReviewSection = document.getElementById("writeReviewSection");
+    if (currentUser) {
+      writeReviewSection.style.display = "block";
+
+      // إعادة تعيين التقييم
+      window.currentRating = 0;
+      document.querySelectorAll(".stars-input i").forEach((star) => {
+        star.className = "far fa-star";
+      });
+      document.getElementById("selectedRating").textContent = "0";
+      document.getElementById("reviewText").value = "";
+    } else {
+      writeReviewSection.style.display = "none";
+      console.log("👤 قسم كتابة المراجعة مخفي لأن المستخدم غير مسجل");
+    }
+
+    // تحميل المراجعات
+    loadProductReviews(productId);
+
+    openModal(document.getElementById("reviewsModal"));
+  }
+
+  function closeReviewsModal() {
+    closeModal(document.getElementById("reviewsModal"));
+  }
+
+  // ======================= تحميل مراجعات المنتج =======================
+  async function loadProductReviews(productId) {
+    console.log(`📊 جلب مراجعات المنتج: ${productId}`);
+    const reviewsList = document.getElementById("reviewsList");
+    const noReviewsMessage = document.getElementById("noReviewsMessage");
+
+    if (!reviewsList) {
+      console.warn("⚠️ قائمة المراجعات غير موجودة");
+      return;
+    }
+
+    reviewsList.innerHTML = "";
+
+    try {
+      // محاولة جلب المراجعات من Supabase
+      const { data: reviews, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("product_id", productId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("❌ خطأ في جلب المراجعات:", error);
+        throw error;
+      }
+
+      if (reviews && reviews.length > 0) {
+        console.log(`✅ تم جلب ${reviews.length} مراجعة`);
+        noReviewsMessage.style.display = "none";
+
+        reviews.forEach((review, index) => {
+          const reviewElement = createReviewElement(review);
+          reviewsList.appendChild(reviewElement);
+        });
+      } else {
+        console.log("ℹ️ لا توجد مراجعات لهذا المنتج");
+        noReviewsMessage.style.display = "block";
+      }
+    } catch (error) {
+      console.error("❌ لا يمكن تحميل المراجعات:", error.message);
+      noReviewsMessage.style.display = "block";
+      showNotification("حدث خطأ في تحميل المراجعات", "error");
+    }
+  }
+
+  function createReviewElement(review) {
+    const div = document.createElement("div");
+    div.className = "review-item";
+
+    div.innerHTML = `
+      <div class="review-header">
+        <img src="${
+          review.user_avatar || "11.svg"
+        }" alt="صورة المستخدم" class="review-avatar" />
+        <div class="review-info">
+          <h5>${review.user_name}</h5>
+          <div class="review-date">${new Date(
+            review.created_at
+          ).toLocaleDateString("ar-SA")}</div>
+        </div>
+      </div>
+      <div class="review-stars">
+        ${Array(5)
+          .fill()
+          .map(
+            (_, i) =>
+              `<i class="fas fa-star${i < review.rating ? "" : "-o"}"></i>`
+          )
+          .join("")}
+        <span style="color: #666; margin-right: 10px;">${review.rating}.0</span>
+    </div>
+      <p>${review.comment}</p>
+    `;
+
+    return div;
+  }
+
+  // ======================= إرسال مراجعة =======================
+  async function submitReview() {
+    console.log("📤 محاولة إرسال مراجعة...");
+
+    if (!currentUser) {
+      console.warn("⚠️ محاولة إرسال مراجعة بدون تسجيل دخول");
+      showNotification("يجب تسجيل الدخول لكتابة مراجعة!", "error");
+      return;
+    }
+
+    if (!window.currentRating || window.currentRating === 0) {
+      console.warn("⚠️ لم يتم اختيار تقييم");
+      showNotification("يرجى اختيار تقييم!", "error");
+      return;
+    }
+
+    const comment = document.getElementById("reviewText").value.trim();
+    if (!comment) {
+      console.warn("⚠️ نص المراجعة فارغ");
+      showNotification("يرجى كتابة مراجعة!", "error");
+      return;
+    }
+
+    // التحقق من أن currentUser يحتوي على id
+    if (!currentUser.id) {
+      console.error("❌ خطأ: المستخدم لا يحتوي على ID:", currentUser);
+      showNotification(
+        "خطأ في بيانات المستخدم، يرجى تسجيل الدخول مرة أخرى",
+        "error"
+      );
+      updateUIForLoggedOutUser();
+      return;
+    }
+
+    const review = {
+      product_id: currentReviewsProduct.id,
+      product_name: currentReviewsProduct.title,
+      user_id: currentUser.id,
+      user_name: currentUser.full_name,
+      user_avatar: currentUser.avatar || "11.svg",
+      rating: window.currentRating,
+      comment: comment,
+    };
+
+    console.log("📝 بيانات المراجعة المراد إرسالها:", review);
+
+    try {
+      // محاولة الحفظ في Supabase
+      const { data, error } = await supabase.from("reviews").insert([review]);
+
+      if (error) {
+        console.error("❌ خطأ في حفظ المراجعة في Supabase:", error);
+        throw error;
+      }
+
+      console.log("✅ تم حفظ المراجعة بنجاح في Supabase");
+      showNotification("تم نشر مراجعتك بنجاح!", "success");
+
+      // تحديث القائمة
+      loadProductReviews(currentReviewsProduct.id);
+
+      // إعادة تعيين النموذج
+      document.getElementById("reviewText").value = "";
+      window.currentRating = 0;
+      document.querySelectorAll(".stars-input i").forEach((star) => {
+        star.className = "far fa-star";
+      });
+      document.getElementById("selectedRating").textContent = "0";
+    } catch (error) {
+      console.error("❌ فشل إرسال المراجعة:", error);
+
+      let errorMessage = "حدث خطأ أثناء حفظ المراجعة!";
+
+      if (error.message.includes("violates foreign key constraint")) {
+        errorMessage =
+          "خطأ: بيانات المستخدم غير صالحة، يرجى تسجيل الدخول مرة أخرى";
+        updateUIForLoggedOutUser();
+      } else if (error.message.includes("duplicate key")) {
+        errorMessage = "لقد كتبت مراجعة لهذا المنتج بالفعل!";
+      }
+
+      showNotification(errorMessage, "error");
+    }
+  }
+
+  // ======================= معالجة التسجيل =======================
+  async function handleRegister(e) {
+    e.preventDefault();
+    console.log("📝 بدء عملية التسجيل...");
+
+    const fullName = document.getElementById("registerFullName").value;
+    const phone = document.getElementById("registerPhone").value;
+    const email = document.getElementById("registerEmail").value;
+    const password = document.getElementById("registerPassword").value;
+    const securityCode = document.getElementById("registerSecurityCode").value;
+    const submitBtn = document.getElementById("registerSubmitBtn");
+
+    console.log("📋 بيانات التسجيل:", {
+      fullName,
+      phone,
+      email,
+      password: "******",
+      securityCode,
+    });
+
+    // التحقق من البيانات
+    if (!fullName || !phone || !password || !securityCode) {
+      console.warn("⚠️ حقل مطلوب مفقود");
+      showNotification("يرجى ملء جميع الحقول المطلوبة!", "error");
+      return;
+    }
+
+    if (securityCode !== "909090") {
+      console.warn("⚠️ رمز الأمان غير صحيح");
+      showNotification("رمز الأمان غير صحيح!", "error");
+      return;
+    }
+
+    const phoneRegex = /^05\d{8}$/;
+    if (!phoneRegex.test(phone)) {
+      console.warn("⚠️ رقم الجوال غير صحيح:", phone);
+      showNotification("يرجى إدخال رقم جوال صحيح!", "error");
+      return;
+    }
+
+    if (password.length < 6) {
+      console.warn("⚠️ كلمة المرور قصيرة:", password.length);
+      showNotification("كلمة المرور يجب أن تكون 6 أحرف على الأقل!", "error");
+      return;
+    }
+
+    try {
+      // عرض حالة التحميل
+      submitBtn.classList.add("loading");
+      submitBtn.disabled = true;
+      console.log("⏳ التحقق من رقم الجوال في قاعدة البيانات...");
+
+      // التحقق من عدم وجود مستخدم بنفس الرقم
+      const { data: existingUsers, error: checkError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("phone", phone);
+
+      if (checkError) {
+        console.error("❌ خطأ في التحقق من رقم الجوال:", checkError);
+        throw checkError;
+      }
+
+      if (existingUsers && existingUsers.length > 0) {
+        console.warn("⚠️ رقم الجوال مسجل بالفعل:", phone);
+        showNotification("رقم الجوال مسجل بالفعل! يرجى تسجيل الدخول.", "error");
+        showLoginForm();
+        document.getElementById("loginPhone").value = phone;
+        return;
+      }
+
+      // إنشاء بيانات المستخدم
+      const userData = {
+        full_name: fullName,
+        phone: phone,
+        email: email || `${phone}@temp.com`,
+        password: password,
+        security_code: securityCode,
+        avatar: "11.svg",
+      };
+
+      console.log("⬆️ محاولة حفظ المستخدم في Supabase:", userData);
+
+      // حفظ المستخدم في Supabase
+      const { data: newUser, error: insertError } = await supabase
+        .from("users")
+        .insert([userData])
+        .select()
+        .single(); // مهم: .single() لجلب سجل واحد فقط
+
+      if (insertError) {
+        console.error("❌ خطأ في إدراج المستخدم:", insertError);
+        throw insertError;
+      }
+
+      console.log("✅ تم إنشاء المستخدم في Supabase:", newUser);
+
+      if (!newUser || !newUser.id) {
+        throw new Error("لم يتم إنشاء المستخدم بشكل صحيح في قاعدة البيانات");
+      }
+
+      // حفظ المستخدم الحالي
+      currentUser = newUser;
+      localStorage.setItem("user", JSON.stringify(currentUser));
+      console.log("💾 تم حفظ المستخدم في التخزين المحلي");
+
+      // تحديث الواجهة
+      await updateUIForLoggedInUser();
+
+      // إغلاق المودال
+      closeModal(document.getElementById("loginModal"));
+
+      showNotification(
+        `🎉 مرحباً ${fullName}! تم إنشاء حسابك بنجاح.`,
+        "success"
+      );
+    } catch (error) {
+      console.error("❌ فشل التسجيل بالتفصيل:", error);
+
+      let errorMessage = "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.";
+
+      if (error.code === "23505") {
+        errorMessage = "رقم الجوال مسجل بالفعل! يرجى تسجيل الدخول.";
+      } else if (error.message.includes("violates check constraint")) {
+        errorMessage = "رقم الجوال غير صحيح! يجب أن يبدأ بـ 05 ويحتوي 10 أرقام";
+      } else if (error.message.includes("duplicate key")) {
+        errorMessage = "رقم الجوال مسجل بالفعل!";
+      }
+
+      showNotification(errorMessage, "error");
+    } finally {
+      submitBtn.classList.remove("loading");
+      submitBtn.disabled = false;
+    }
+  }
+
+  // ======================= معالجة تسجيل الدخول =======================
+  async function handleLogin(e) {
+    e.preventDefault();
+    console.log("🔐 بدء عملية تسجيل الدخول...");
+
+    const phone = document.getElementById("loginPhone").value;
+    const password = document.getElementById("loginPassword").value;
+    const securityCode = document.getElementById("loginSecurityCode").value;
+    const submitBtn = document.getElementById("loginSubmitBtn");
+
+    console.log("📋 بيانات تسجيل الدخول:", {
+      phone,
+      password: "******",
+      securityCode,
+    });
+
+    if (!phone || !password || !securityCode) {
+      console.warn("⚠️ حقل مطلوب مفقود في تسجيل الدخول");
+      showNotification("يرجى ملء جميع الحقول!", "error");
+      return;
+    }
+
+    if (securityCode !== "909090") {
+      console.warn("⚠️ رمز الأمان غير صحيح في تسجيل الدخول");
+      showNotification("رمز الأمان غير صحيح!", "error");
+      return;
+    }
+
+    try {
+      submitBtn.classList.add("loading");
+      submitBtn.disabled = true;
+      console.log("🔍 البحث عن المستخدم في قاعدة البيانات...");
+
+      // البحث في Supabase
+      const { data: users, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("phone", phone)
+        .eq("password", password)
+        .eq("security_code", securityCode);
+
+      if (error) {
+        console.error("❌ خطأ في البحث عن المستخدم:", error);
+        throw error;
+      }
+
+      console.log("📊 نتيجة البحث عن المستخدم:", users);
+
+      if (!users || users.length === 0) {
+        console.warn("⚠️ بيانات الدخول غير صحيحة");
+        showNotification("بيانات الدخول غير صحيحة!", "error");
+        return;
+      }
+
+      const foundUser = users[0];
+      console.log("✅ تم العثور على المستخدم:", foundUser);
+
+      currentUser = foundUser;
+      localStorage.setItem("user", JSON.stringify(currentUser));
+      console.log("💾 تم حفظ المستخدم في التخزين المحلي");
+
+      await updateUIForLoggedInUser();
+      closeModal(document.getElementById("loginModal"));
+
+      showNotification(`🎉 مرحباً بعودتك ${currentUser.full_name}!`, "success");
+    } catch (error) {
+      console.error("❌ فشل تسجيل الدخول بالتفصيل:", error);
+      showNotification("حدث خطأ أثناء تسجيل الدخول.", "error");
+    } finally {
+      submitBtn.classList.remove("loading");
+      submitBtn.disabled = false;
+    }
+  }
+
+  // ======================= حفظ الإعدادات =======================
+  async function handleSaveSettings() {
+    console.log("💾 بدء حفظ الإعدادات...");
+
+    const fullName = document.getElementById("settingsFullName").value;
+    const phone = document.getElementById("settingsPhone").value;
+    const email = document.getElementById("settingsEmail").value;
+    const password = document.getElementById("settingsPassword").value;
+    const selectedAvatar =
+      window.selectedAvatar ||
+      document
+        .querySelector(".avatar-option.selected")
+        ?.getAttribute("data-avatar") ||
+      currentUser.avatar;
+
+    console.log("📋 بيانات الإعدادات:", {
+      fullName,
+      phone,
+      email,
+      hasPassword: !!password,
+      selectedAvatar,
+    });
+
+    if (!fullName || !phone) {
+      console.warn("⚠️ الاسم ورقم الجوال مطلوبان");
+      showNotification("الاسم ورقم الجوال مطلوبان!", "error");
+      return;
+    }
+
+    const phoneRegex = /^05\d{8}$/;
+    if (!phoneRegex.test(phone)) {
+      console.warn("⚠️ رقم الجوال غير صحيح:", phone);
+      showNotification("رقم الجوال غير صحيح!", "error");
+      return;
+    }
+
+    try {
+      // تحديث بيانات المستخدم
+      const updatedUser = {
+        ...currentUser,
+        full_name: fullName,
+        phone: phone,
+        email: email,
+        avatar: selectedAvatar,
+        updated_at: new Date().toISOString(),
+      };
+
+      // تحديث كلمة المرور إذا تم إدخالها
+      if (password) {
+        updatedUser.password = password;
+        console.log("🔑 تم تضمين تحديث كلمة المرور");
+      }
+
+      console.log("⬆️ محاولة تحديث بيانات المستخدم في Supabase:", updatedUser);
+
+      // تحديث في Supabase
+      const { error } = await supabase
+        .from("users")
+        .update(updatedUser)
+        .eq("id", currentUser.id);
+
+      if (error) {
+        console.error("❌ خطأ في تحديث بيانات المستخدم:", error);
+        throw error;
+      }
+
+      console.log("✅ تم تحديث بيانات المستخدم في Supabase");
+
+      // حفظ المستخدم الحالي
+      currentUser = updatedUser;
+      localStorage.setItem("user", JSON.stringify(currentUser));
+      console.log("💾 تم تحديث المستخدم في التخزين المحلي");
+
+      // تحديث الواجهة
+      await updateUIForLoggedInUser();
+
+      closeSettingsModal();
+      showNotification("✅ تم تحديث بياناتك بنجاح!", "success");
+    } catch (error) {
+      console.error("❌ فشل تحديث البيانات:", error);
+      showNotification("حدث خطأ أثناء تحديث البيانات!", "error");
+    }
+  }
+
+  // ======================= تسجيل الخروج =======================
+  window.logout = function () {
+    console.log("🚪 تسجيل خروج المستخدم...");
+    hideLogoutConfirm();
+    updateUIForLoggedOutUser();
+    showNotification("✅ تم تسجيل الخروج بنجاح.", "success");
+  };
+
+  window.showLogoutConfirm = function () {
+    console.log("❓ عرض تأكيد تسجيل الخروج...");
+    closeAllDropdowns();
+    document.getElementById("logoutConfirmModal")?.classList.add("active");
+  };
+
+  window.hideLogoutConfirm = function () {
+    console.log("❌ إخفاء تأكيد تسجيل الخروج...");
+    document.getElementById("logoutConfirmModal")?.classList.remove("active");
+  };
+
+  // ======================= وظائف إضافية للتصحيح =======================
+  window.openSettingsModal = openSettingsModal;
+  window.closeSettingsModal = closeSettingsModal;
+  window.openReviewsModal = openReviewsModal;
+  window.closeReviewsModal = closeReviewsModal;
+
+  // ======================= اختبار اتصال Supabase =======================
+  async function testSupabaseConnection() {
+    try {
+      console.log("📡 اختبار اتصال Supabase...");
+      const { data, error } = await supabase
+        .from("users")
+        .select("count", { count: "exact", head: true })
+        .limit(1);
+
+      if (error) {
+        if (error.code === "42P01") {
+          console.warn("⚠️ جدول users غير موجود في Supabase");
+          showNotification("يجب إنشاء الجداول في Supabase أولاً!", "error");
+        } else {
+          console.error("❌ مشكلة في اتصال Supabase:", error.message);
+          showNotification("مشكلة في اتصال قاعدة البيانات!", "error");
+        }
+      } else {
+        console.log("✅ اتصال Supabase ناجح!");
+      }
+    } catch (err) {
+      console.error("❌ فشل اختبار الاتصال:", err.message);
+    }
+  }
+
+  // ======================= تهيئة النظام =======================
+  console.log("🚀 بدء تشغيل التطبيق...");
+  initApp();
+  console.log("✅ تم تحميل التطبيق بنجاح!");
+  
+});

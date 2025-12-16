@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>اكادمية زد | الدفع</title>
+    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="payment.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link rel="icon" type="image/png" href="logotop.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- شاشة التحميل -->
+    <div id="loading-screen" class="loading-screen">
+      <div class="spinner">
+        <i class="fas fa-spinner fa-spin fa-3x"></i>
+      </div>
+      <p>جارٍ التحميل...</p>
+    </div>
+
+    <!-- شريط التنقل -->
+    <header class="navbar">
+      <div class="navbar-content">
+        <a href="index.html" class="logo-link">
+          <img src="logo.svg" alt="شعار اكادمية زد" class="logo" />
+        </a>
+
+        <nav class="nav-links">
+          <a href="index.html" class="nav-item">الرئيسية</a>
+          <a href="courses.html" class="nav-item">الدورات</a>
+          <a href="summaries.html" class="nav-item">الملخصات</a>
+          <a href="store.html" class="nav-item">المتجر</a>
+          <a href="cart.html" class="nav-item">السلة</a>
+        </nav>
+
+        <div class="nav-actions">
+          <!-- قائمة المستخدم -->
+          <div class="user-dropdown" id="userDropdown">
+            <!-- حالة قبل التسجيل -->
+            <div id="guestUser" class="guest-user" style="display: none">
+              <div class="user-icon-container">
+                <i class="fas fa-user-circle user-icon"></i>
+              </div>
+            </div>
+
+            <!-- حالة بعد التسجيل -->
+            <div id="loggedInUser" class="logged-in-user" style="display: none">
+              <div class="user-profile" id="userProfileBtn">
+                <img
+                  src="11.svg"
+                  alt="صورة المستخدم"
+                  class="user-avatar"
+                  id="currentUserAvatar"
+                />
+                <div class="user-info">
+                  <span class="user-name" id="displayUserName">مستخدم</span>
+                  <span class="user-status">نشط الآن</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <a href="store.html" class="cta-button">العودة للمتجر</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="payment-container">
+      <div class="payment-wrapper">
+        <!-- خطوات الدفع -->
+        <div class="payment-steps">
+          <div class="step active">
+            <span class="step-number">1</span>
+            <span class="step-text">مراجعة الطلب</span>
+          </div>
+          <div class="step">
+            <span class="step-number">2</span>
+            <span class="step-text">بيانات الدفع</span>
+          </div>
+          <div class="step">
+            <span class="step-number">3</span>
+            <span class="step-text">تأكيد الطلب</span>
+          </div>
+        </div>
+
+        <div class="payment-content">
+          <!-- الجانب الأيمن: تفاصيل المنتجات -->
+          <div class="order-summary">
+            <h2>
+              <i class="fas fa-shopping-bag" style="margin-left: 10px"></i>
+              ملخص الطلب
+            </h2>
+
+            <div class="order-items" id="orderItems">
+              <!-- المنتجات ستظهر هنا من localStorage -->
+              <div class="empty-order">
+                <i
+                  class="fas fa-shopping-cart"
+                  style="font-size: 60px; color: #ccc; margin-bottom: 20px"
+                ></i>
+                <p>لا توجد منتجات في الطلب</p>
+                <a href="store.html" class="back-to-store-btn">العودة للمتجر</a>
+              </div>
+            </div>
+
+            <div class="order-totals">
+              <div class="total-row">
+                <span>المجموع الفرعي</span>
+                <span id="subtotal">0 ر.س</span>
+              </div>
+              <div class="total-row">
+                <span>خصم</span>
+                <span id="discount">0 ر.س</span>
+              </div>
+              <div class="total-row grand-total">
+                <span>المجموع الكلي</span>
+                <span id="grandTotal">0 ر.س</span>
+              </div>
+            </div>
+
+            <div class="coupon-section">
+              <h4><i class="fas fa-tag"></i> كود الخصم</h4>
+              <div class="coupon-input">
+                <input
+                  type="text"
+                  id="couponCode"
+                  placeholder="أدخل كود الخصم"
+                />
+                <button type="button" id="applyCouponBtn">تطبيق</button>
+              </div>
+              <div class="coupon-message" id="couponMessage"></div>
+              <div class="available-coupons">
+                <p>أكواد الخصم المتاحة:</p>
+                <ul>
+                  <li><strong>WELCOME10</strong> - خصم 10% لأول طلب</li>
+                  <li><strong>STUDENT15</strong> - خصم 15% للطلاب</li>
+                  <li><strong>LOYAL20</strong> - خصم 20% للعملاء الدائمين</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="payment-methods-info">
+              <h4><i class="fas fa-credit-card"></i> طرق الدفع المتاحة</h4>
+              <div class="methods-grid">
+                <div class="method-card">
+                  <i class="fas fa-university"></i>
+                  <span>التحويل البنكي</span>
+                </div>
+                <div class="method-card">
+                  <i class="fab fa-cc-visa"></i>
+                  <span>بطاقة ائتمان</span>
+                </div>
+                <div class="method-card">
+                  <i class="fab fa-cc-mada"></i>
+                  <span>مدى</span>
+                </div>
+                <div class="method-card">
+                  <i class="fas fa-mobile-alt"></i>
+                  <span>STC Pay</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- الجانب الأيسر: نموذج الدفع -->
+          <div class="payment-form-container">
+            <div class="form-header">
+              <h2>
+                <i class="fas fa-credit-card" style="margin-left: 10px"></i>
+                بيانات الدفع
+              </h2>
+              <p>أكمل بياناتك للانتهاء من عملية الشراء</p>
+            </div>
+
+            <form
+              id="paymentForm"
+              action="https://formsubmit.co/YOUR_EMAIL_HERE"
+              method="POST"
+              enctype="multipart/form-data"
+            >
+              <!-- بيانات العميل -->
+              <div class="form-section">
+                <h3><i class="fas fa-user"></i> بيانات العميل</h3>
+                <div class="form-group">
+                  <label for="fullName">الاسم الكامل *</label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    required
+                    placeholder="أدخل اسمك الكامل"
+                  />
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="email">البريد الإلكتروني *</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      required
+                      placeholder="example@email.com"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="phone">رقم الجوال *</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      required
+                      placeholder="05XXXXXXXX"
+                      pattern="^05\d{8}$"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- طريقة الدفع -->
+              <div class="form-section">
+                <h3><i class="fas fa-wallet"></i> طريقة الدفع</h3>
+                <div class="payment-methods">
+                  <label class="payment-method">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="bank"
+                      checked
+                    />
+                    <div class="method-content">
+                      <i class="fas fa-university"></i>
+                      <div>
+                        <strong>التحويل البنكي</strong>
+                        <small>تحويل مباشر إلى الحساب البنكي</small>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label class="payment-method">
+                    <input type="radio" name="paymentMethod" value="card" />
+                    <div class="method-content">
+                      <i class="fab fa-cc-visa"></i>
+                      <div>
+                        <strong>بطاقة ائتمان</strong>
+                        <small>دفع آمن عبر البطاقات</small>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label class="payment-method">
+                    <input type="radio" name="paymentMethod" value="mada" />
+                    <div class="method-content">
+                      <i class="fab fa-cc-mada"></i>
+                      <div>
+                        <strong>مدى</strong>
+                        <small>الدفع عبر نظام مدى</small>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- معلومات التحويل البنكي (تظهر عند اختيار التحويل البنكي) -->
+                <div class="bank-info" id="bankInfo">
+                  <div class="bank-card">
+                    <h4>
+                      <i class="fas fa-university"></i> معلومات التحويل البنكي
+                    </h4>
+                    <div class="bank-details">
+                      <div class="detail">
+                        <span>اسم البنك:</span>
+                        <strong>البنك الأهلي السعودي</strong>
+                      </div>
+                      <div class="detail">
+                        <span>رقم الحساب:</span>
+                        <strong>SA44 1000 0000 0000 0000 0000</strong>
+                      </div>
+                      <div class="detail">
+                        <span>اسم المستفيد:</span>
+                        <strong>أكادمية زد</strong>
+                      </div>
+                      <div class="detail">
+                        <span>الآيبان:</span>
+                        <strong>SA44 1000 0000 0000 0000 0000</strong>
+                      </div>
+                    </div>
+
+                    <!-- صورة إيصال التحويل -->
+                    <div class="receipt-upload">
+                      <h5><i class="fas fa-receipt"></i> رفع إيصال التحويل</h5>
+                      <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>اسحب وأفلت صورة الإيصال هنا أو انقر للرفع</p>
+                        <input
+                          type="file"
+                          id="receiptFile"
+                          name="receipt"
+                          accept="image/*"
+                          required
+                        />
+                      </div>
+                      <div class="file-preview" id="filePreview"></div>
+                      <small
+                        >يجب أن تكون الصورة واضحة وتظهر معلومات التحويل</small
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <!-- معلومات البطاقة (تظهر عند اختيار البطاقة) -->
+                <div class="card-info" id="cardInfo" style="display: none">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="cardNumber">رقم البطاقة *</label>
+                      <input
+                        type="text"
+                        id="cardNumber"
+                        name="cardNumber"
+                        placeholder="1234 5678 9012 3456"
+                        maxlength="19"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="cardName">اسم حامل البطاقة *</label>
+                      <input
+                        type="text"
+                        id="cardName"
+                        name="cardName"
+                        placeholder="كما هو مكتوب على البطاقة"
+                      />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="expiryDate">تاريخ الانتهاء *</label>
+                      <input
+                        type="text"
+                        id="expiryDate"
+                        name="expiryDate"
+                        placeholder="MM/YY"
+                        maxlength="5"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="cvv">CVV *</label>
+                      <input
+                        type="text"
+                        id="cvv"
+                        name="cvv"
+                        placeholder="123"
+                        maxlength="3"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ملاحظات إضافية -->
+              <div class="form-section">
+                <h3><i class="fas fa-sticky-note"></i> ملاحظات إضافية</h3>
+                <div class="form-group">
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    rows="4"
+                    placeholder="ملاحظات إضافية للطلب (اختياري)..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- الشروط والأحكام -->
+              <div class="terms-section">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="agreeTerms" required />
+                  <span>
+                    أوافق على
+                    <a href="terms.html" target="_blank">الشروط والأحكام</a>
+                    وسياسة الاسترجاع والاستبدال
+                  </span>
+                </label>
+              </div>
+
+              <!-- أزرار التنفيذ -->
+              <div class="form-actions">
+                <button
+                  type="button"
+                  class="cancel-btn"
+                  onclick="window.history.back()"
+                >
+                  <i class="fas fa-arrow-right"></i> إلغاء
+                </button>
+                <button type="submit" class="submit-btn" id="submitPaymentBtn">
+                  <i class="fas fa-lock"></i> تأكيد الطلب والدفع
+                  <span id="finalAmount">0 ر.س</span>
+                </button>
+              </div>
+
+              <!-- معلومات إضافية -->
+              <div class="additional-info">
+                <div class="info-item">
+                  <i class="fas fa-shield-alt"></i>
+                  <span>دفع آمن ومشفر بالكامل</span>
+                </div>
+                <div class="info-item">
+                  <i class="fas fa-headset"></i>
+                  <span>دعم فني على مدار الساعة</span>
+                </div>
+                <div class="info-item">
+                  <i class="fas fa-undo"></i>
+                  <span>ضمان استرجاع 7 أيام</span>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- نموذج تأكيد الطلب -->
+    <div id="confirmationModal" class="modal">
+      <div class="modal-content">
+        <div class="confirmation-content">
+          <div class="confirmation-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h2>تم تأكيد طلبك بنجاح! 🎉</h2>
+          <p class="order-id">
+            رقم الطلب: <span id="orderId">#ORD-2024-001</span>
+          </p>
+          <div class="confirmation-details">
+            <div class="detail-item">
+              <i class="fas fa-user"></i>
+              <div>
+                <small>العميل</small>
+                <strong id="confirmationName">-</strong>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-calendar-alt"></i>
+              <div>
+                <small>تاريخ الطلب</small>
+                <strong id="confirmationDate">-</strong>
+              </div>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-money-bill-wave"></i>
+              <div>
+                <small>المبلغ المدفوع</small>
+                <strong id="confirmationAmount">-</strong>
+              </div>
+            </div>
+          </div>
+          <p class="confirmation-message">
+            تم استلام طلبك بنجاح وسنتواصل معك خلال 24 ساعة لتأكيد الدفع وتنفيذ
+            الخدمة.
+          </p>
+          <div class="confirmation-actions">
+            <button class="print-btn" onclick="window.print()">
+              <i class="fas fa-print"></i> طباعة الفاتورة
+            </button>
+            <a href="index.html" class="home-btn">
+              <i class="fas fa-home"></i> العودة للرئيسية
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <img src="logo.png" alt="شعار اكادمية زد الأبيض" class="logo" />
+        </div>
+
+        <div class="footer-links">
+          <a href="index.html">الرئيسية</a>
+          <a href="courses.html">الدورات</a>
+          <a href="summaries.html">الملخصات</a>
+          <a href="store.html">المتجر</a>
+          <a href="about.html">من نحن</a>
+          <a href="contact.html">اتصل بنا</a>
+        </div>
+
+        <div class="social-icons">
+          <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-linkedin-in"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+
+      <div class="copyright">
+        <div class="security-badges">
+          <span class="badge"><i class="fas fa-lock"></i> دفع آمن</span>
+          <span class="badge"><i class="fas fa-shield-alt"></i> مشفر</span>
+          <span class="badge"><i class="fas fa-check-circle"></i> معتمد</span>
+        </div>
+        &copy; جميع الحقوق محفوظة لـ أكادمية زد
+      </div>
+    </footer>
+    <style>
+      /* ======================= متغيرات الدفع ======================= */
+      :root {
+        --payment-primary: var(--primary-color);
+        --payment-success: #28a745;
+        --payment-danger: #dc3545;
+        --payment-warning: #ffc107;
+        --payment-info: #17a2b8;
+        --payment-light: #f8f9fa;
+        --payment-dark: #343a40;
+        --payment-border: #dee2e6;
+        --payment-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        --payment-shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.15);
+      }
+
+      /* ======================= تنسيقات الحاوية الرئيسية ======================= */
+      .payment-container {
+        padding: 40px 5%;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        min-height: calc(100vh - 200px);
+      }
+
+      .payment-wrapper {
+        max-width: 1300px;
+        margin: 0 auto;
+      }
+
+      /* ======================= خطوات الدفع ======================= */
+      .payment-steps {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-bottom: 40px;
+        position: relative;
+      }
+
+      .payment-steps::before {
+        content: "";
+        position: absolute;
+        top: 20px;
+        right: 0;
+        left: 0;
+        height: 2px;
+        background: var(--payment-border);
+        z-index: 1;
+      }
+
+      .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 2;
+      }
+
+      .step-number {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border: 2px solid var(--payment-border);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+      }
+
+      .step.active .step-number {
+        background: var(--payment-primary);
+        border-color: var(--payment-primary);
+        color: white;
+        transform: scale(1.1);
+      }
+
+      .step-text {
+        font-size: 14px;
+        color: var(--payment-dark);
+        font-weight: 600;
+      }
+
+      .step.active .step-text {
+        color: var(--payment-primary);
+      }
+
+      /* ======================= محتوى الدفع ======================= */
+      .payment-content {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 30px;
+      }
+
+      @media (max-width: 992px) {
+        .payment-content {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ======================= ملخص الطلب ======================= */
+      .order-summary {
+        background: white;
+        border-radius: var(--border-radius-base);
+        padding: 25px;
+        box-shadow: var(--payment-shadow);
+        height: fit-content;
+      }
+
+      .order-summary h2 {
+        color: var(--payment-primary);
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--payment-light);
+        display: flex;
+        align-items: center;
+      }
+
+      .order-items {
+        max-height: 400px;
+        overflow-y: auto;
+        margin-bottom: 25px;
+        border: 1px solid var(--payment-border);
+        border-radius: var(--border-radius-base);
+        padding: 15px;
+      }
+
+      .empty-order {
+        text-align: center;
+        padding: 40px 20px;
+        color: #888;
+      }
+
+      .empty-order i {
+        margin-bottom: 15px;
+      }
+
+      .back-to-store-btn {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 10px 20px;
+        background: var(--payment-primary);
+        color: white;
+        border-radius: var(--border-radius-base);
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+
+      .back-to-store-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+      }
+
+      .order-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid var(--payment-border);
+        gap: 15px;
+      }
+
+      .order-item:last-child {
+        border-bottom: none;
+      }
+
+      .order-item-image {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid var(--payment-border);
+      }
+
+      .order-item-details {
+        flex: 1;
+      }
+
+      .order-item-title {
+        color: var(--payment-dark);
+        margin-bottom: 5px;
+        font-size: 16px;
+      }
+
+      .order-item-price {
+        color: var(--payment-primary);
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .order-item-quantity {
+        color: var(--payment-dark);
+        font-size: 14px;
+      }
+
+      .order-totals {
+        background: var(--payment-light);
+        padding: 20px;
+        border-radius: var(--border-radius-base);
+        margin-bottom: 25px;
+      }
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        color: var(--payment-dark);
+      }
+
+      .total-row.grand-total {
+        font-size: 20px;
+        font-weight: bold;
+        color: var(--payment-primary);
+        border-top: 2px solid var(--payment-border);
+        padding-top: 15px;
+        margin-top: 15px;
+      }
+
+      /* ======================= قسم كود الخصم ======================= */
+      .coupon-section {
+        margin-bottom: 25px;
+      }
+
+      .coupon-section h4 {
+        color: var(--payment-primary);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .coupon-input {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .coupon-input input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid var(--payment-border);
+        border-radius: var(--border-radius-base);
+        font-size: 14px;
+      }
+
+      .coupon-input button {
+        padding: 12px 20px;
+        background: var(--payment-primary);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius-base);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .coupon-input button:hover {
+        background: var(--primary-dark);
+      }
+
+      .coupon-message {
+        padding: 10px;
+        border-radius: var(--border-radius-base);
+        margin-bottom: 15px;
+        font-size: 14px;
+      }
+
+      .coupon-message.success {
+        background: rgba(40, 167, 69, 0.1);
+        color: var(--payment-success);
+        border: 1px solid rgba(40, 167, 69, 0.2);
+      }
+
+      .coupon-message.error {
+        background: rgba(220, 53, 69, 0.1);
+        color: var(--payment-danger);
+        border: 1px solid rgba(220, 53, 69, 0.2);
+      }
+
+      .available-coupons {
+        background: var(--payment-light);
+        padding: 15px;
+        border-radius: var(--border-radius-base);
+        border: 1px solid var(--payment-border);
+      }
+
+      .available-coupons p {
+        margin-bottom: 10px;
+        color: var(--payment-dark);
+        font-weight: bold;
+      }
+
+      .available-coupons ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .available-coupons li {
+        margin-bottom: 8px;
+        padding-right: 10px;
+        color: var(--payment-dark);
+        font-size: 14px;
+      }
+
+      /* ======================= معلومات طرق الدفع ======================= */
+      .payment-methods-info {
+        margin-top: 25px;
+      }
+
+      .payment-methods-info h4 {
+        color: var(--payment-primary);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .methods-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .method-card {
+        background: white;
+        border: 1px solid var(--payment-border);
+        border-radius: 8px;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+      }
+
+      .method-card:hover {
+        border-color: var(--payment-primary);
+        transform: translateY(-2px);
+      }
+
+      .method-card i {
+        font-size: 24px;
+        color: var(--payment-primary);
+      }
+
+      .method-card span {
+        color: var(--payment-dark);
+        font-size: 14px;
+      }
+
+      /* ======================= نموذج الدفع ======================= */
+      .payment-form-container {
+        background: white;
+        border-radius: var(--border-radius-base);
+        padding: 30px;
+        box-shadow: var(--payment-shadow);
+      }
+
+      .form-header {
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .form-header h2 {
+        color: var(--payment-primary);
+        margin-bottom: 10px;
+      }
+
+      .form-header p {
+        color: var(--payment-dark);
+        font-size: 16px;
+      }
+
+      .form-section {
+        margin-bottom: 30px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid var(--payment-border);
+      }
+
+      .form-section h3 {
+        color: var(--payment-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--payment-dark);
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid var(--payment-border);
+        border-radius: var(--border-radius-base);
+        font-size: 14px;
+        font-family: "Cairo", sans-serif;
+        transition: all 0.3s ease;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: var(--payment-primary);
+        box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      @media (max-width: 768px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ======================= طرق الدفع ======================= */
+      .payment-methods {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .payment-method {
+        display: block;
+        position: relative;
+      }
+
+      .payment-method input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+      }
+
+      .method-content {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border: 2px solid var(--payment-border);
+        border-radius: var(--border-radius-base);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        gap: 15px;
+      }
+
+      .payment-method input[type="radio"]:checked + .method-content {
+        border-color: var(--payment-primary);
+        background: rgba(0, 86, 179, 0.05);
+      }
+
+      .method-content i {
+        font-size: 24px;
+        color: var(--payment-primary);
+      }
+
+      .method-content div {
+        flex: 1;
+      }
+
+      .method-content strong {
+        display: block;
+        color: var(--payment-dark);
+        margin-bottom: 5px;
+      }
+
+      .method-content small {
+        color: #666;
+        font-size: 12px;
+      }
+
+      /* ======================= معلومات البنك ======================= */
+      .bank-info,
+      .card-info {
+        margin-top: 20px;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .bank-card {
+        background: var(--payment-light);
+        border-radius: var(--border-radius-base);
+        padding: 20px;
+        border: 1px solid var(--payment-border);
+      }
+
+      .bank-card h4 {
+        color: var(--payment-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .bank-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+
+      .detail {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid var(--payment-border);
+      }
+
+      .detail span {
+        display: block;
+        color: #666;
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+
+      .detail strong {
+        color: var(--payment-dark);
+        font-size: 14px;
+        word-break: break-all;
+      }
+
+      .receipt-upload {
+        margin-top: 25px;
+      }
+
+      .receipt-upload h5 {
+        color: var(--payment-primary);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .upload-area {
+        border: 2px dashed var(--payment-border);
+        border-radius: var(--border-radius-base);
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        margin-bottom: 15px;
+      }
+
+      .upload-area:hover {
+        border-color: var(--payment-primary);
+        background: rgba(0, 86, 179, 0.05);
+      }
+
+      .upload-area i {
+        font-size: 48px;
+        color: var(--payment-border);
+        margin-bottom: 15px;
+      }
+
+      .upload-area p {
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      .upload-area input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      .file-preview {
+        margin-top: 15px;
+        display: none;
+      }
+
+      .file-preview.show {
+        display: block;
+      }
+
+      .file-preview img {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+        border: 1px solid var(--payment-border);
+      }
+
+      /* ======================= معلومات البطاقة ======================= */
+      .card-info .form-group input {
+        background: white;
+      }
+
+      /* ======================= الشروط والأحكام ======================= */
+      .terms-section {
+        margin: 25px 0;
+      }
+
+      .checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+      }
+
+      .checkbox-label input[type="checkbox"] {
+        margin-top: 5px;
+      }
+
+      .checkbox-label span {
+        color: var(--payment-dark);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .checkbox-label a {
+        color: var(--payment-primary);
+        text-decoration: none;
+      }
+
+      .checkbox-label a:hover {
+        text-decoration: underline;
+      }
+
+      /* ======================= أزرار التنفيذ ======================= */
+      .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+      }
+
+      .cancel-btn,
+      .submit-btn {
+        flex: 1;
+        padding: 18px;
+        border: none;
+        border-radius: var(--border-radius-base);
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .cancel-btn {
+        background: #f8f9fa;
+        color: var(--payment-dark);
+        border: 1px solid var(--payment-border);
+      }
+
+      .cancel-btn:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+      }
+
+      .submit-btn {
+        background: linear-gradient(135deg, var(--payment-success), #20c997);
+        color: white;
+        position: relative;
+      }
+
+      .submit-btn:hover {
+        background: linear-gradient(135deg, #218838, #1e9e8a);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3);
+      }
+
+      .submit-btn #finalAmount {
+        position: absolute;
+        left: 15px;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 14px;
+      }
+
+      /* ======================= معلومات إضافية ======================= */
+      .additional-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--payment-border);
+      }
+
+      .info-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--payment-dark);
+        font-size: 14px;
+      }
+
+      .info-item i {
+        color: var(--payment-primary);
+        font-size: 18px;
+      }
+
+      /* ======================= نموذج التأكيد ======================= */
+      .confirmation-content {
+        text-align: center;
+        padding: 40px;
+      }
+
+      .confirmation-icon {
+        font-size: 80px;
+        color: var(--payment-success);
+        margin-bottom: 20px;
+        animation: bounce 1s ease;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+
+      .confirmation-content h2 {
+        color: var(--payment-primary);
+        margin-bottom: 15px;
+      }
+
+      .order-id {
+        color: var(--payment-dark);
+        font-size: 18px;
+        margin-bottom: 30px;
+      }
+
+      .confirmation-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+        background: var(--payment-light);
+        padding: 25px;
+        border-radius: var(--border-radius-base);
+      }
+
+      .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .detail-item i {
+        font-size: 24px;
+        color: var(--payment-primary);
+      }
+
+      .detail-item small {
+        display: block;
+        color: #666;
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+
+      .confirmation-message {
+        color: var(--payment-dark);
+        line-height: 1.6;
+        margin: 25px 0;
+        padding: 20px;
+        background: var(--payment-light);
+        border-radius: var(--border-radius-base);
+        border-right: 4px solid var(--payment-success);
+      }
+
+      .confirmation-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+      }
+
+      .print-btn,
+      .home-btn {
+        padding: 12px 30px;
+        border-radius: var(--border-radius-base);
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .print-btn {
+        background: var(--payment-primary);
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+
+      .print-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+      }
+
+      .home-btn {
+        background: #f8f9fa;
+        color: var(--payment-dark);
+        border: 1px solid var(--payment-border);
+      }
+
+      .home-btn:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+      }
+
+      /* ======================= تخصيص الفوتر للدفع ======================= */
+      .payment-footer {
+        background: linear-gradient(
+          135deg,
+          var(--primary-dark) 0%,
+          #002a5e 100%
+        );
+        padding: 30px 5%;
+        text-align: center;
+        color: white;
+        margin-top: 60px;
+      }
+
+      .security-badges {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+
+      .badge {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* ======================= Responsive Design ======================= */
+      @media (max-width: 768px) {
+        .payment-steps {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 15px;
+        }
+
+        .payment-steps::before {
+          display: none;
+        }
+
+        .step {
+          flex-direction: row;
+          gap: 15px;
+        }
+
+        .confirmation-details {
+          grid-template-columns: 1fr;
+        }
+
+        .confirmation-actions {
+          flex-direction: column;
+        }
+
+        .form-actions {
+          flex-direction: column;
+        }
+
+        .methods-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .payment-container {
+          padding: 20px;
+        }
+
+        .order-summary,
+        .payment-form-container {
+          padding: 20px;
+        }
+
+        .bank-details {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+    <script src="payment.js"></script>
+    <script>
+      // إخفاء شاشة التحميل عند انتهاء التحميل
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          const loadingScreen = document.getElementById("loading-screen");
+          if (loadingScreen) {
+            loadingScreen.classList.remove("is-active");
+          }
+        }, 500);
+      });
+      // ======================= تهيئة صفحة الدفع =======================
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("💳 بدء تهيئة صفحة الدفع...");
+
+        // تحميل طلب السلة من localStorage
+        loadOrderFromCart();
+
+        // تهيئة طرق الدفع
+        initPaymentMethods();
+
+        // تهيئة رفع الملفات
+        initFileUpload();
+
+        // تهيئة كود الخصم
+        initCouponSystem();
+
+        // تهيئة نموذج الدفع
+        initPaymentForm();
+
+        // تحديث المبلغ النهائي
+        updateFinalAmount();
+
+        console.log("✅ تم تهيئة صفحة الدفع بنجاح");
+      });
+
+      // ======================= تحميل طلب السلة =======================
+      function loadOrderFromCart() {
+        const cart = JSON.parse(localStorage.getItem("store_cart")) || [];
+        const orderItems = document.getElementById("orderItems");
+        const subtotalEl = document.getElementById("subtotal");
+        const discountEl = document.getElementById("discount");
+        const grandTotalEl = document.getElementById("grandTotal");
+
+        if (cart.length === 0) {
+          orderItems.innerHTML = `
+      <div class="empty-order">
+        <i class="fas fa-shopping-cart" style="font-size: 60px; color: #ccc; margin-bottom: 20px"></i>
+        <p>لا توجد منتجات في الطلب</p>
+        <a href="store.html" class="back-to-store-btn">العودة للمتجر</a>
+      </div>
+    `;
+          return;
+        }
+
+        // إزالة رسالة السلة الفارغة
+        const emptyOrder = orderItems.querySelector(".empty-order");
+        if (emptyOrder) emptyOrder.remove();
+
+        let subtotal = 0;
+
+        // إضافة المنتجات
+        cart.forEach((item) => {
+          const product = getProductData(item.id);
+          if (!product) return;
+
+          const itemTotal = item.price * item.quantity;
+          subtotal += itemTotal;
+
+          const itemElement = document.createElement("div");
+          itemElement.className = "order-item";
+          itemElement.innerHTML = `
+      <img src="${item.image || "info.svg"}" alt="${
+            item.name
+          }" class="order-item-image" />
+      <div class="order-item-details">
+        <h4 class="order-item-title">${item.name}</h4>
+        <div class="order-item-price">${item.price.toLocaleString()} ر.س</div>
+        <div class="order-item-quantity">الكمية: ${item.quantity}</div>
+      </div>
+      <div class="order-item-total">${itemTotal.toLocaleString()} ر.س</div>
+    `;
+
+          orderItems.appendChild(itemElement);
+        });
+
+        // حساب الخصم (سيتم تحديثه من نظام الكوبونات)
+        const discount = window.currentDiscount || 0;
+        const discountAmount = subtotal * (discount / 100);
+        const grandTotal = subtotal - discountAmount;
+
+        // تحديث القيم
+        subtotalEl.textContent = subtotal.toLocaleString() + " ر.س";
+        discountEl.textContent = discountAmount.toLocaleString() + " ر.س";
+        grandTotalEl.textContent = grandTotal.toLocaleString() + " ر.س";
+
+        // حفظ المعلومات للاستخدام لاحقاً
+        window.orderSubtotal = subtotal;
+        window.orderDiscount = discountAmount;
+        window.orderGrandTotal = grandTotal;
+      }
+
+      // ======================= بيانات المنتجات (من store.js) =======================
+      function getProductData(productId) {
+        const productsData = {
+          1: { name: "تصميم موقع شخصي (Portfolio)", price: 999 },
+          2: { name: "تطوير موقع أكاديمية تعليمية (LMS)", price: 5500 },
+          3: { name: "إنشاء متجر إلكتروني احترافي", price: 2800 },
+          4: { name: "تصميم واجهة تسجيل دخول/إنشاء حساب", price: 850 },
+          5: { name: "بناء موقع فاخر لشركة ناشئة", price: 6500 },
+          6: { name: "تصميم موقع تعريفي لشركة", price: 2500 },
+        };
+
+        return productsData[productId] || null;
+      }
+
+      // ======================= طرق الدفع =======================
+      function initPaymentMethods() {
+        const paymentMethods = document.querySelectorAll(
+          'input[name="paymentMethod"]'
+        );
+        const bankInfo = document.getElementById("bankInfo");
+        const cardInfo = document.getElementById("cardInfo");
+
+        paymentMethods.forEach((method) => {
+          method.addEventListener("change", (e) => {
+            const value = e.target.value;
+
+            if (value === "bank") {
+              bankInfo.style.display = "block";
+              cardInfo.style.display = "none";
+
+              // جعل حقل الإيصال مطلوباً
+              document.getElementById("receiptFile").required = true;
+              document.getElementById("cardNumber").required = false;
+              document.getElementById("cardName").required = false;
+              document.getElementById("expiryDate").required = false;
+              document.getElementById("cvv").required = false;
+            } else {
+              bankInfo.style.display = "none";
+              cardInfo.style.display = "block";
+
+              // جعل حقل البطاقة مطلوباً
+              document.getElementById("receiptFile").required = false;
+              document.getElementById("cardNumber").required = true;
+              document.getElementById("cardName").required = true;
+              document.getElementById("expiryDate").required = true;
+              document.getElementById("cvv").required = true;
+            }
+          });
+        });
+
+        // تهيئة تحقق من رقم البطاقة
+        document
+          .getElementById("cardNumber")
+          ?.addEventListener("input", formatCardNumber);
+        document
+          .getElementById("expiryDate")
+          ?.addEventListener("input", formatExpiryDate);
+        document.getElementById("cvv")?.addEventListener("input", formatCVV);
+      }
+
+      function formatCardNumber(e) {
+        let value = e.target.value.replace(/\D/g, "");
+        value = value.replace(/(\d{4})/g, "$1 ").trim();
+        e.target.value = value.substring(0, 19);
+      }
+
+      function formatExpiryDate(e) {
+        let value = e.target.value.replace(/\D/g, "");
+        if (value.length >= 2) {
+          value = value.substring(0, 2) + "/" + value.substring(2);
+        }
+        e.target.value = value.substring(0, 5);
+      }
+
+      function formatCVV(e) {
+        let value = e.target.value.replace(/\D/g, "");
+        e.target.value = value.substring(0, 3);
+      }
+
+      // ======================= رفع الملفات =======================
+      function initFileUpload() {
+        const uploadArea = document.getElementById("uploadArea");
+        const fileInput = document.getElementById("receiptFile");
+        const filePreview = document.getElementById("filePreview");
+
+        if (!uploadArea || !fileInput) return;
+
+        // عند النقر على منطقة الرفع
+        uploadArea.addEventListener("click", () => {
+          fileInput.click();
+        });
+
+        // عند اختيار ملف
+        fileInput.addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            previewFile(file);
+          }
+        });
+
+        // سحب وإفلات الملف
+        uploadArea.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          uploadArea.style.borderColor = "var(--payment-primary)";
+          uploadArea.style.background = "rgba(0, 86, 179, 0.05)";
+        });
+
+        uploadArea.addEventListener("dragleave", () => {
+          uploadArea.style.borderColor = "var(--payment-border)";
+          uploadArea.style.background = "transparent";
+        });
+
+        uploadArea.addEventListener("drop", (e) => {
+          e.preventDefault();
+          uploadArea.style.borderColor = "var(--payment-border)";
+          uploadArea.style.background = "transparent";
+
+          const file = e.dataTransfer.files[0];
+          if (file && file.type.startsWith("image/")) {
+            fileInput.files = e.dataTransfer.files;
+            previewFile(file);
+          }
+        });
+      }
+
+      function previewFile(file) {
+        const filePreview = document.getElementById("filePreview");
+
+        if (!file.type.startsWith("image/")) {
+          alert("الرجاء رفع صورة فقط!");
+          return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+          alert("حجم الصورة كبير جداً! الحد الأقصى 5MB");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          filePreview.innerHTML = `
+      <div class="file-info">
+        <img src="${e.target.result}" alt="معاينة الإيصال" />
+        <div>
+          <strong>${file.name}</strong>
+          <small>${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+        </div>
+        <button type="button" onclick="removeFile()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    `;
+          filePreview.classList.add("show");
+        };
+
+        reader.readAsDataURL(file);
+      }
+
+      function removeFile() {
+        const fileInput = document.getElementById("receiptFile");
+        const filePreview = document.getElementById("filePreview");
+
+        fileInput.value = "";
+        filePreview.innerHTML = "";
+        filePreview.classList.remove("show");
+      }
+
+      // ======================= نظام الكوبونات =======================
+      function initCouponSystem() {
+        const applyCouponBtn = document.getElementById("applyCouponBtn");
+        const couponCodeInput = document.getElementById("couponCode");
+
+        if (!applyCouponBtn) return;
+
+        applyCouponBtn.addEventListener("click", applyCoupon);
+        couponCodeInput?.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            applyCoupon();
+          }
+        });
+
+        // قائمة أكواد الخصم
+        window.coupons = {
+          WELCOME10: { discount: 10, description: "خصم 10% لأول طلب" },
+          STUDENT15: { discount: 15, description: "خصم 15% للطلاب" },
+          LOYAL20: { discount: 20, description: "خصم 20% للعملاء الدائمين" },
+          SAVE30: { discount: 30, description: "خصم 30% في المناسبات" },
+        };
+      }
+
+      function applyCoupon() {
+        const couponCode = document
+          .getElementById("couponCode")
+          .value.trim()
+          .toUpperCase();
+        const couponMessage = document.getElementById("couponMessage");
+        const discountEl = document.getElementById("discount");
+        const grandTotalEl = document.getElementById("grandTotal");
+        const finalAmountEl = document.getElementById("finalAmount");
+
+        if (!couponCode) {
+          couponMessage.textContent = "الرجاء إدخال كود الخصم";
+          couponMessage.className = "coupon-message error";
+          return;
+        }
+
+        const coupon = window.coupons[couponCode];
+
+        if (!coupon) {
+          couponMessage.textContent = "❌ كود الخصم غير صحيح";
+          couponMessage.className = "coupon-message error";
+          window.currentDiscount = 0;
+          updateOrderTotals();
+          updateFinalAmount();
+          return;
+        }
+
+        couponMessage.textContent = `✅ ${coupon.description} - تم تطبيق خصم ${coupon.discount}%`;
+        couponMessage.className = "coupon-message success";
+
+        window.currentDiscount = coupon.discount;
+        window.currentCoupon = couponCode;
+
+        updateOrderTotals();
+        updateFinalAmount();
+      }
+
+      function updateOrderTotals() {
+        const subtotal = window.orderSubtotal || 0;
+        const discountPercent = window.currentDiscount || 0;
+        const discountAmount = subtotal * (discountPercent / 100);
+        const grandTotal = subtotal - discountAmount;
+
+        document.getElementById("discount").textContent =
+          discountAmount.toLocaleString() + " ر.س";
+        document.getElementById("grandTotal").textContent =
+          grandTotal.toLocaleString() + " ر.س";
+
+        window.orderDiscount = discountAmount;
+        window.orderGrandTotal = grandTotal;
+      }
+
+      function updateFinalAmount() {
+        const finalAmountEl = document.getElementById("finalAmount");
+        const grandTotal = window.orderGrandTotal || 0;
+
+        if (finalAmountEl) {
+          finalAmountEl.textContent = grandTotal.toLocaleString() + " ر.س";
+        }
+      }
+
+      // ======================= نموذج الدفع =======================
+      function initPaymentForm() {
+        const paymentForm = document.getElementById("paymentForm");
+
+        if (!paymentForm) return;
+
+        paymentForm.addEventListener("submit", handlePaymentSubmit);
+      }
+
+      function handlePaymentSubmit(e) {
+        e.preventDefault();
+
+        // التحقق من الشروط
+        const agreeTerms = document.getElementById("agreeTerms").checked;
+        if (!agreeTerms) {
+          alert("يجب الموافقة على الشروط والأحكام");
+          return;
+        }
+
+        // التحقق من وجود منتجات
+        const cart = JSON.parse(localStorage.getItem("store_cart")) || [];
+        if (cart.length === 0) {
+          alert("لا توجد منتجات في الطلب");
+          return;
+        }
+
+        // جمع بيانات النموذج
+        const formData = new FormData(e.target);
+        const paymentData = {
+          customer: {
+            name: formData.get("fullName"),
+            email: formData.get("email"),
+            phone: formData.get("phone"),
+          },
+          payment: {
+            method: formData.get("paymentMethod"),
+            amount: window.orderGrandTotal,
+            discount: window.currentDiscount || 0,
+            coupon: window.currentCoupon || "لا يوجد",
+          },
+          order: {
+            items: cart,
+            subtotal: window.orderSubtotal,
+            discount: window.orderDiscount,
+            total: window.orderGrandTotal,
+            date: new Date().toLocaleString("ar-SA"),
+          },
+          notes: formData.get("notes"),
+        };
+
+        // التحقق من البيانات المطلوبة حسب طريقة الدفع
+        const paymentMethod = formData.get("paymentMethod");
+
+        if (paymentMethod === "bank") {
+          const receiptFile = document.getElementById("receiptFile").files[0];
+          if (!receiptFile) {
+            alert("الرجاء رفع إيصال التحويل");
+            return;
+          }
+        } else if (paymentMethod === "card" || paymentMethod === "mada") {
+          const cardNumber = document.getElementById("cardNumber").value;
+          const cardName = document.getElementById("cardName").value;
+          const expiryDate = document.getElementById("expiryDate").value;
+          const cvv = document.getElementById("cvv").value;
+
+          if (!cardNumber || !cardName || !expiryDate || !cvv) {
+            alert("الرجاء إكمال جميع بيانات البطاقة");
+            return;
+          }
+
+          // تحقق من صحة تاريخ الانتهاء
+          if (!isValidExpiryDate(expiryDate)) {
+            alert("تاريخ الانتهاء غير صالح");
+            return;
+          }
+        }
+
+        // حفظ بيانات الطلب في localStorage
+        saveOrder(paymentData);
+
+        // عرض تأكيد الطلب
+        showConfirmation(paymentData);
+
+        // إرسال النموذج إذا كان هناك action
+        if (e.target.action && e.target.action !== "#") {
+          // إضافة البيانات الإضافية للنموذج
+          const hiddenItems = document.createElement("input");
+          hiddenItems.type = "hidden";
+          hiddenItems.name = "order_items";
+          hiddenItems.value = JSON.stringify(cart);
+          e.target.appendChild(hiddenItems);
+
+          const hiddenTotal = document.createElement("input");
+          hiddenTotal.type = "hidden";
+          hiddenTotal.name = "order_total";
+          hiddenTotal.value = window.orderGrandTotal;
+          e.target.appendChild(hiddenTotal);
+
+          // يمكن تفعيل هذا الجزء عند استخدام formsubmit.co
+          // e.target.submit();
+        }
+      }
+
+      function isValidExpiryDate(expiryDate) {
+        const [month, year] = expiryDate.split("/");
+        if (!month || !year) return false;
+
+        const currentYear = new Date().getFullYear() % 100;
+        const currentMonth = new Date().getMonth() + 1;
+
+        const expYear = parseInt(year);
+        const expMonth = parseInt(month);
+
+        if (expYear < currentYear) return false;
+        if (expYear === currentYear && expMonth < currentMonth) return false;
+        if (expMonth < 1 || expMonth > 12) return false;
+
+        return true;
+      }
+
+      function saveOrder(orderData) {
+        // توليد رقم طلب عشوائي
+        const orderId = "ORD-" + Date.now().toString().slice(-8);
+
+        // إضافة رقم الطلب
+        orderData.order.id = orderId;
+        orderData.order.status = "قيد المراجعة";
+
+        // حفظ في localStorage
+        const orders = JSON.parse(localStorage.getItem("user_orders")) || [];
+        orders.push(orderData);
+        localStorage.setItem("user_orders", JSON.stringify(orders));
+
+        // تنظيف السلة بعد إتمام الطلب
+        localStorage.removeItem("store_cart");
+
+        return orderId;
+      }
+
+      function showConfirmation(orderData) {
+        const modal = document.getElementById("confirmationModal");
+        const orderId = orderData.order.id;
+        const customerName = orderData.customer.name;
+        const orderDate = new Date().toLocaleDateString("ar-SA", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const orderAmount = orderData.order.total.toLocaleString() + " ر.س";
+
+        // تعبئة البيانات
+        document.getElementById("orderId").textContent = orderId;
+        document.getElementById("confirmationName").textContent = customerName;
+        document.getElementById("confirmationDate").textContent = orderDate;
+        document.getElementById("confirmationAmount").textContent = orderAmount;
+
+        // فتح المودال
+        modal.classList.add("active");
+        document.body.classList.add("modal-open");
+        document.body.style.overflow = "hidden";
+
+        // إغلاق المودال عند النقر خارج المحتوى
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) {
+            modal.classList.remove("active");
+            document.body.classList.remove("modal-open");
+            document.body.style.overflow = "auto";
+
+            // توجيه المستخدم للصفحة الرئيسية
+            setTimeout(() => {
+              window.location.href = "index.html";
+            }, 500);
+          }
+        });
+      }
+
+      // ======================= وظائف مساعدة =======================
+      window.removeFile = removeFile;
+      window.applyCoupon = applyC1oupon;
+
+      // إغلاق المودال
+      function closeModal(modal) {
+        if (!modal) return;
+        modal.classList.remove("active");
+        document.body.classList.remove("modal-open");
+        document.body.style.overflow = "auto";
+      }
+    </script>
+  </body>
+</html>

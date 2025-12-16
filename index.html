@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>اكادمية زد | الرئيسية</title>
+    <link rel="stylesheet" href="index.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link rel="icon" type="image/png" href="logotop.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+  <body>
+    <!-- شاشة التحميل -->
+    <div id="loading-screen" class="loading-screen">
+      <div class="spinner">
+        <i class="fas fa-spinner fa-spin fa-3x"></i>
+      </div>
+      <p>جارٍ التحميل...</p>
+    </div>
+
+    <!-- شريط التنقل -->
+    <header class="navbar">
+      <div class="navbar-content">
+        <a href="index.html" class="logo-link">
+          <img src="logo.svg" alt="شعار Royal Store" class="logo" />
+        </a>
+
+        <nav class="nav-links">
+          <a href="index.html" class="nav-item active">الرئيسية</a>
+          <a href="courses.html" class="nav-item">الدورات</a>
+          <a href="summaries.html" class="nav-item">الملخصات</a>
+          <a href="store.html" class="nav-item">المتجر</a>
+        </nav>
+
+        <div class="nav-actions">
+          <!-- قائمة المستخدم (Dropdown) -->
+          <div class="user-dropdown" id="userDropdown">
+            <!-- الحالة قبل التسجيل -->
+            <div id="guestUser" class="guest-user" style="display: none">
+              <div class="user-icon-container">
+                <i
+                  class="fas fa-user-circle user-icon"
+                  id="openLoginModalBtn"
+                ></i>
+              </div>
+            </div>
+
+            <!-- الحالة بعد التسجيل -->
+            <div id="loggedInUser" class="logged-in-user" style="display: none">
+              <div class="user-profile" id="userProfileBtn">
+                <img
+                  src="11.svg"
+                  alt="صورة المستخدم"
+                  class="user-avatar"
+                  id="currentUserAvatar"
+                />
+                <div class="user-info">
+                  <span class="user-name" id="displayUserName">زياد حجاج</span>
+                  <span class="user-status">نشط الآن</span>
+                </div>
+                <i class="fas fa-chevron-down dropdown-arrow"></i>
+              </div>
+
+              <!-- قائمة Dropdown -->
+              <div class="dropdown-menu" id="dropdownMenu">
+                <div class="dropdown-header">
+                  <img
+                    src="11.svg"
+                    alt="صورة المستخدم"
+                    class="dropdown-avatar"
+                    id="dropdownAvatar"
+                  />
+                  <div>
+                    <h4 id="dropdownUserName">زياد حجاج</h4>
+                    <p id="dropdownUserEmail">user@example.com</p>
+                  </div>
+                </div>
+                <div class="dropdown-divider"></div>
+                <a href="profile.html" class="dropdown-item">
+                  <i class="fas fa-user"></i>
+                  <span>الملف الشخصي</span>
+                </a>
+                <a href="#" class="dropdown-item" id="openSettingsModalBtn">
+                  <i class="fas fa-cog"></i>
+                  <span>الإعدادات</span>
+                </a>
+                <a href="purchases.html" class="dropdown-item">
+                  <i class="fas fa-shopping-bag"></i>
+                  <span>طلباتي</span>
+                </a>
+                <div class="dropdown-divider"></div>
+                <a
+                  href="#"
+                  class="dropdown-item logout-item"
+                  onclick="showLogoutConfirm()"
+                >
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>تسجيل الخروج</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <a href="store.html" class="cta-button" id="ctaButton">ابدأ الآن</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- نافذة تأكيد تسجيل الخروج -->
+    <div id="logoutConfirmModal" class="confirm-modal">
+      <div class="confirm-content">
+        <i
+          class="fas fa-sign-out-alt"
+          style="font-size: 50px; color: #dc3545; margin-bottom: 15px"
+        ></i>
+        <h3 style="margin-bottom: 10px">تأكيد تسجيل الخروج</h3>
+        <p style="color: #666; margin-bottom: 25px">
+          هل أنت متأكد من رغبتك في تسجيل الخروج؟
+        </p>
+        <div class="confirm-buttons">
+          <button class="confirm-btn confirm-yes" onclick="logout()">
+            نعم، سجل خروج
+          </button>
+          <button class="confirm-btn confirm-no" onclick="hideLogoutConfirm()">
+            لا، إلغاء
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- مودال الإعدادات -->
+    <div id="settingsModal" class="modal settings-modal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeSettingsModal()">&times;</span>
+        <div class="settings-content">
+          <h3
+            style="
+              text-align: center;
+              color: var(--primary-color);
+              margin-bottom: 30px;
+            "
+          >
+            <i class="fas fa-cog" style="margin-left: 10px"></i>
+            إعدادات الحساب
+          </h3>
+
+          <div class="settings-avatar-section">
+            <div class="avatar-upload-container">
+              <img
+                id="avatarPreview"
+                src="11.svg"
+                alt="صورة الحساب"
+                class="avatar-preview"
+              />
+              <div class="avatar-upload-overlay">
+                <i class="fas fa-camera"></i>
+                <span>تغيير الصورة</span>
+              </div>
+              <input
+                type="file"
+                id="avatarUpload"
+                accept="image/*"
+                style="display: none"
+              />
+            </div>
+
+            <h4 style="margin-bottom: 15px; color: #666">اختر صورتك الشخصية</h4>
+            <div class="avatar-options">
+              <img
+                src="11.svg"
+                alt="صورة 11"
+                class="avatar-option"
+                data-avatar="11.svg"
+              />
+              <img
+                src="22.svg"
+                alt="صورة 22"
+                class="avatar-option"
+                data-avatar="22.svg"
+              />
+              <img
+                src="33.svg"
+                alt="صورة 33"
+                class="avatar-option"
+                data-avatar="33.svg"
+              />
+              <img
+                src="44.svg"
+                alt="صورة 44"
+                class="avatar-option"
+                data-avatar="44.svg"
+              />
+              <img
+                src="55.svg"
+                alt="صورة 55"
+                class="avatar-option"
+                data-avatar="55.svg"
+              />
+              <img
+                src="66.svg"
+                alt="صورة 66"
+                class="avatar-option"
+                data-avatar="66.svg"
+              />
+              <img
+                src="77.svg"
+                alt="صورة 77"
+                class="avatar-option"
+                data-avatar="77.svg"
+              />
+              <img
+                src="88.svg"
+                alt="صورة 88"
+                class="avatar-option"
+                data-avatar="88.svg"
+              />
+            </div>
+          </div>
+
+          <form id="settingsForm">
+            <div class="form-group">
+              <label for="settingsFullName">الاسم الكامل</label>
+              <div class="input-wrapper">
+                <i class="fas fa-user input-icon"></i>
+                <input
+                  type="text"
+                  id="settingsFullName"
+                  required
+                  placeholder="أدخل اسمك الكامل"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="settingsPhone">رقم الجوال</label>
+              <div class="input-wrapper">
+                <i class="fas fa-phone-alt input-icon"></i>
+                <input
+                  type="tel"
+                  id="settingsPhone"
+                  required
+                  placeholder="مثال: 0555555555"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="settingsEmail">البريد الإلكتروني</label>
+              <div class="input-wrapper">
+                <i class="fas fa-envelope input-icon"></i>
+                <input
+                  type="email"
+                  id="settingsEmail"
+                  required
+                  placeholder="example@email.com"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="settingsPassword">كلمة المرور</label>
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  type="password"
+                  id="settingsPassword"
+                  placeholder="اتركها فارغة إذا لم ترد التغيير"
+                />
+              </div>
+            </div>
+          </form>
+
+          <div class="settings-buttons">
+            <button
+              type="button"
+              class="settings-btn cancel"
+              onclick="closeSettingsModal()"
+            >
+              <i class="fas fa-times" style="margin-left: 8px"></i>
+              إلغاء
+            </button>
+            <button
+              type="button"
+              class="settings-btn save"
+              id="saveSettingsBtn"
+            >
+              <i class="fas fa-save" style="margin-left: 8px"></i>
+              حفظ التغييرات
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- مودال مراجعات المنتج -->
+    <div id="reviewsModal" class="modal reviews-modal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeReviewsModal()">&times;</span>
+        <div class="reviews-content">
+          <h3
+            style="
+              text-align: center;
+              color: var(--primary-color);
+              margin-bottom: 20px;
+            "
+          >
+            <i class="fas fa-star" style="margin-left: 10px"></i>
+            مراجعات المنتج
+          </h3>
+          <h4
+            id="reviewsProductTitle"
+            style="text-align: center; margin-bottom: 30px; color: #666"
+          ></h4>
+
+          <!-- قسم كتابة مراجعة جديدة -->
+          <div
+            class="write-review-section"
+            id="writeReviewSection"
+            style="display: none"
+          >
+            <h5><i class="fas fa-edit"></i> اكتب مراجعتك</h5>
+            <div class="rating-input">
+              <span>تقييمك:</span>
+              <div class="stars-input">
+                <i class="far fa-star" data-rating="1"></i>
+                <i class="far fa-star" data-rating="2"></i>
+                <i class="far fa-star" data-rating="3"></i>
+                <i class="far fa-star" data-rating="4"></i>
+                <i class="far fa-star" data-rating="5"></i>
+              </div>
+              <span id="selectedRating">0</span>
+            </div>
+            <div class="form-group">
+              <textarea
+                id="reviewText"
+                placeholder="اكتب مراجعتك هنا..."
+                rows="4"
+              ></textarea>
+            </div>
+            <button class="submit-review-btn" id="submitReviewBtn">
+              <i class="fas fa-paper-plane"></i> نشر المراجعة
+            </button>
+          </div>
+
+          <!-- قائمة المراجعات -->
+          <div class="reviews-list" id="reviewsList">
+            <!-- المراجعات ستظهر هنا ديناميكيًا -->
+          </div>
+
+          <div
+            class="no-reviews"
+            id="noReviewsMessage"
+            style="text-align: center; padding: 30px; color: #888"
+          >
+            <i
+              class="far fa-comment-alt"
+              style="font-size: 40px; margin-bottom: 15px"
+            ></i>
+            <p>لا توجد مراجعات لهذا المنتج بعد. كن أول من يكتب مراجعة!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- مودال التسجيل والتسجيل الدخول --><!-- مودال التسجيل والتسجيل الدخول -->
+<div id="loginModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <div class="modal-body">
+      <div class="modal-image-side">
+        <img src="lolo.gif" alt="صورة تسجيل الدخول" class="login-img" />
+      </div>
+      <div class="modal-form-side">
+        <!-- أزرار التبديل -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <button 
+            id="showLoginBtn" 
+            class="switch-btn active"
+            style="flex: 1; padding: 12px; background: #0056b3; color: white; border: none; border-radius: 8px; cursor: pointer;">
+            تسجيل الدخول
+          </button>
+          <button 
+            id="showRegisterBtn" 
+            class="switch-btn"
+            style="flex: 1; padding: 12px; background: #f0f0f0; color: #666; border: none; border-radius: 8px; cursor: pointer;">
+            تسجيل جديد
+          </button>
+        </div>
+
+        <!-- نموذج تسجيل الدخول -->
+        <div id="loginForm" class="tab-content active">
+          <h3>تسجيل الدخول</h3>
+          <form id="loginFormElement">
+            <div class="form-group">
+              <label for="loginPhone">رقم الجوال</label>
+              <div class="input-wrapper">
+                <i class="fas fa-phone-alt input-icon"></i>
+                <input
+                  type="tel"
+                  id="loginPhone"
+                  required
+                  placeholder="مثال: 0555555555"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="loginPassword">كلمة المرور</label>
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  type="password"
+                  id="loginPassword"
+                  required
+                  placeholder="أدخل كلمة المرور"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="loginSecurityCode">رمز الأمان</label>
+              <div class="input-wrapper">
+                <i class="fas fa-shield-alt input-icon"></i>
+                <input
+                  type="password"
+                  id="loginSecurityCode"
+                  required
+                  placeholder="رمز الأمان السري"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              class="login-submit-btn"
+              id="loginSubmitBtn"
+            >
+              <span class="btn-text">تسجيل الدخول</span>
+              <span class="btn-spinner" style="display: none">
+                <i class="fas fa-spinner fa-spin"></i>
+              </span>
+            </button>
+          </form>
+        </div>
+
+        <!-- نموذج التسجيل الجديد -->
+        <div id="registerForm" class="tab-content" style="display: none;">
+          <h3>إنشاء حساب جديد</h3>
+          <form id="registerFormElement">
+            <div class="form-group">
+              <label for="registerFullName">الاسم الكامل</label>
+              <div class="input-wrapper">
+                <i class="fas fa-user input-icon"></i>
+                <input
+                  type="text"
+                  id="registerFullName"
+                  required
+                  placeholder="أدخل اسمك الكامل"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="registerPhone">رقم الجوال</label>
+              <div class="input-wrapper">
+                <i class="fas fa-phone-alt input-icon"></i>
+                <input
+                  type="tel"
+                  id="registerPhone"
+                  required
+                  placeholder="مثال: 0555555555"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="registerEmail">البريد الإلكتروني</label>
+              <div class="input-wrapper">
+                <i class="fas fa-envelope input-icon"></i>
+                <input
+                  type="email"
+                  id="registerEmail"
+                  placeholder="example@email.com"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="registerPassword">كلمة المرور</label>
+              <div class="input-wrapper">
+                <i class="fas fa-lock input-icon"></i>
+                <input
+                  type="password"
+                  id="registerPassword"
+                  required
+                  placeholder="أدخل كلمة مرور قوية"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="registerSecurityCode">رمز الأمان</label>
+              <div class="input-wrapper">
+                <i class="fas fa-shield-alt input-icon"></i>
+                <input
+                  type="password"
+                  id="registerSecurityCode"
+                  required
+                  placeholder="رمز الأمان السري"
+                />
+              </div>
+              <small style="color: #666; display: block; margin-top: 5px">
+                رمز الأمان ستحصل عليه من الإدارة
+              </small>
+            </div>
+            <button
+              type="submit"
+              class="login-submit-btn"
+              id="registerSubmitBtn"
+            >
+              <span class="btn-text">إنشاء حساب</span>
+              <span class="btn-spinner" style="display: none">
+                <i class="fas fa-spinner fa-spin"></i>
+              </span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- إشعارات جانبية -->
+    <div id="notification" class="notification">
+      <i class="fas fa-check-circle"></i>
+      <span class="notification-text"></span>
+    </div>
+
+    <main>
+      <section class="hero-section">
+        <div class="hero-content">
+          <div class="hero-text slideInRight">
+            <h1>نص مؤقت نص مؤقت نص مؤقت</h1>
+            <p>
+              نص مؤقت نص مؤقت نص مؤقت نص مؤقت نص مؤقت نص مؤقت نص مؤقت نص مؤقت نص
+              مؤقت نص مؤقت
+            </p>
+            <div class="hero-cta-buttons animate-from-bottom">
+              <a href="courses.html" class="hero-cta-btn"
+                ><i class="fas fa-graduation-cap"></i> الدورات</a
+              >
+              <a href="summaries.html" class="hero-cta-btn"
+                ><i class="fas fa-book-open"></i> الملخصات</a
+              >
+              <a href="store.html" class="hero-cta-btn"
+                ><i class="fas fa-shopping-bag"></i> المتجر</a
+              >
+            </div>
+          </div>
+
+          <div class="hero-slider slideInLeft">
+            <div class="slider-wrapper">
+              <img
+                src="hero1.svg"
+                alt="صورة Hero 1"
+                class="slider-image active"
+                data-index="0"
+              />
+              <img
+                src="hero2.svg"
+                alt="صورة Hero 2"
+                class="slider-image"
+                data-index="1"
+              />
+              <img
+                src="hero3.svg"
+                alt="صورة Hero 3"
+                class="slider-image"
+                data-index="2"
+              />
+            </div>
+            <div class="slider-dots">
+              <span class="dot active" data-index="0"></span>
+              <span class="dot" data-index="1"></span>
+              <span class="dot" data-index="2"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="latest-courses-section" id="courses">
+        <h2>أحدث الدورات</h2>
+        <div class="courses-container">
+          <div class="course-card">
+            <div class="course-image-container">
+              <img
+                src="course1.svg"
+                alt="صورة دورة البرمجة"
+                class="course-image"
+              />
+            </div>
+            <div class="card-content">
+              <h3 class="course-title">هنا اسم دورة قابلة للحجز1</h3>
+              <div class="course-meta">
+                <span><i class="far fa-clock"></i> 12 ساعة</span>
+                <span><i class="far fa-heart"></i> 245 إعجاب</span>
+                <span><i class="fas fa-user-tie"></i> زياد حجاج</span>
+              </div>
+              <div class="course-price">
+                <span class="old-price">200 ر.س</span>
+                <span class="new-price">149 ر.س</span>
+              </div>
+              <p class="course-description">
+                هنا يكتب الوصف الكامل لهذه الدورة لحاجزها، يتضمن كل التفاصيل
+                المهمة
+              </p>
+              <div class="rating-section">
+                <div class="stars">
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star-half-alt gold"></i>
+                  <span class="rating-text">(4.5)</span>
+                </div>
+                <span class="students-count"
+                  ><i class="fas fa-users"></i> 120 طالب</span
+                >
+              </div>
+              <button class="explore-btn course-buy-btn">
+                <i class="fas fa-shopping-cart"></i> حجز الدورة
+              </button>
+            </div>
+          </div>
+
+          <div class="course-card">
+            <div class="course-image-container">
+              <img
+                src="course1.svg"
+                alt="صورة دورة التصميم"
+                class="course-image"
+              />
+            </div>
+            <div class="card-content">
+              <h3 class="course-title">هنا اسم دورة قابلة للحجز2</h3>
+              <div class="course-meta">
+                <span><i class="far fa-clock"></i> 8 ساعات</span>
+                <span><i class="far fa-heart"></i> 189 إعجاب</span>
+                <span><i class="fas fa-user-tie"></i> أحمد محمد</span>
+              </div>
+              <div class="course-price">
+                <span class="old-price">150 ر.س</span>
+                <span class="new-price">99 ر.س</span>
+              </div>
+              <p class="course-description">
+                دورة متخصصة في تصميم الواجهات مع أحدث التقنيات وأفضل الممارسات
+              </p>
+              <div class="rating-section">
+                <div class="stars">
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="far fa-star gold"></i>
+                  <span class="rating-text">(4.0)</span>
+                </div>
+                <span class="students-count"
+                  ><i class="fas fa-users"></i> 85 طالب</span
+                >
+              </div>
+              <button class="explore-btn course-buy-btn">
+                <i class="fas fa-shopping-cart"></i> حجز الدورة
+              </button>
+            </div>
+          </div>
+
+          <div class="course-card">
+            <div class="course-image-container">
+              <img
+                src="course1.svg"
+                alt="صورة دورة التسويق"
+                class="course-image"
+              />
+            </div>
+            <div class="card-content">
+              <h3 class="course-title">هنا اسم دورة قابلة للحجز3</h3>
+              <div class="course-meta">
+                <span><i class="far fa-clock"></i> 15 ساعة</span>
+                <span><i class="far fa-heart"></i> 312 إعجاب</span>
+                <span><i class="fas fa-user-tie"></i> سارة علي</span>
+              </div>
+              <div class="course-price">
+                <span class="old-price">250 ر.س</span>
+                <span class="new-price">199 ر.س</span>
+              </div>
+              <p class="course-description">
+                تعلم أساسيات التسويق الرقمي وكيفية بناء استراتيجيات ناجحة
+                للمنتجات
+              </p>
+              <div class="rating-section">
+                <div class="stars">
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <span class="rating-text">(5.0)</span>
+                </div>
+                <span class="students-count"
+                  ><i class="fas fa-users"></i> 210 طالب</span
+                >
+              </div>
+              <button class="explore-btn course-buy-btn">
+                <i class="fas fa-shopping-cart"></i> حجز الدورة
+              </button>
+            </div>
+          </div>  
+      </section>
+
+      <section class="most-popular-store-section" id="store">
+        <h2>الأكثر طلباً من المتجر</h2>
+        <div class="store-container">
+          <div class="product-card hot-sale-card" data-product-id="prodA">
+            <span class="badge">الأسرع</span>
+            <div class="product-image-slider-wrapper">
+              <div class="product-image-slider" data-product-id="prodA">
+                <img
+                  src="info.svg"
+                  alt="صورة المنتج 1-1"
+                  class="product-image active"
+                />
+                <img
+                  src="info.svg"
+                  alt="صورة المنتج 1-2"
+                  class="product-image"
+                />
+                <img
+                  src="info.svg"
+                  alt="صورة المنتج 1-3"
+                  class="product-image"
+                />
+              </div>
+              <button class="prev-btn" data-product-id="prodA">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+              <button class="next-btn" data-product-id="prodA">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+            </div>
+            <div class="card-content">
+              <span class="product-category">صفحات ألعاب</span>
+              <h3 class="product-title">صفحة شخصية (شجرة روابط)</h3>
+              <p class="product-description">
+                صفحة شخصية بأيقونات تواصل اجتماعي من تخصيصك ومتحركة بتأثيرات
+                جيمنج
+              </p>
+              <ul class="spec-list">
+                <li>
+                  <i class="fas fa-check-circle"></i>إمكانية التعديل 4 مرات
+                </li>
+                <li><i class="fas fa-check-circle"></i>تخصيص السوشال ميديا</li>
+                <li><i class="fas fa-check-circle"></i>إضافة مجانية بسيطة</li>
+              </ul>
+              <div class="price-info">
+                <span class="old-price">25 ر.س</span>
+                <span class="new-price">15.99 ر.س</span>
+              </div>
+              <div class="rating-section">
+                <div class="stars">
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star-half-alt gold"></i>
+                  <span class="rating-text">(4.5)</span>
+                </div>
+                <button class="reviews-btn">
+                  <i class="far fa-comment"></i> 18 مراجعة
+                </button>
+              </div>
+              <div class="stock-status">
+                <i class="fas fa-cubes"></i> متوفر | دومين مخصص
+              </div>
+              <div class="product-actions">
+                <button class="details-btn">
+                  <i class="fas fa-info-circle"></i> تفاصيل
+                </button>
+                <button class="product-buy-btn">
+                  <i class="fas fa-heart"></i> حجز المنتج
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="product-card hot-sale-card" data-product-id="prodB">
+            <span class="badge">لا محدود</span>
+            <div class="product-image-slider-wrapper">
+              <div class="product-image-slider" data-product-id="prodB">
+                <img
+                  src="chatwep.svg"
+                  alt="صورة المنتج 2-1"
+                  class="product-image active"
+                />
+                <img
+                  src="chatwep2.svg"
+                  alt="صورة المنتج 2-2"
+                  class="product-image"
+                />
+                <img
+                  src="chatwep.svg"
+                  alt="صورة المنتج 3-2"
+                  class="product-image"
+                />
+              </div>
+              <button class="prev-btn" data-product-id="prodB">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+              <button class="next-btn" data-product-id="prodB">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+            </div>
+            <div class="card-content">
+              <span class="product-category">قواعد بيانات</span>
+              <h3 class="product-title">يوزر موجي</h3>
+              <p class="product-description">
+                برنامج مراسلة عام لامحدود المستخدمين بتصميم مواقع المراسلة
+                العالمية مع واجهة تسجيل
+              </p>
+              <ul class="spec-list">
+                <li><i class="fas fa-check-circle"></i>مستخدمين لانهائيين</li>
+                <li><i class="fas fa-check-circle"></i>حساب ادمن</li>
+                <li><i class="fas fa-check-circle"></i>مراسلة من دول أخرى</li>
+              </ul>
+              <div class="price-info">
+                <span class="old-price">70 ر.س</span>
+                <span class="new-price">64.99 ر.س</span>
+              </div>
+              <div class="rating-section">
+                <div class="stars">
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <span class="rating-text">(5.0)</span>
+                </div>
+                <button class="reviews-btn">
+                  <i class="far fa-comment"></i> 30 مراجعة
+                </button>
+              </div>
+              <div class="stock-status">
+                <i class="fas fa-cubes"></i> متوفر | دومين مخصص
+              </div>
+              <div class="product-actions">
+                <button class="details-btn">
+                  <i class="fas fa-info-circle"></i> تفاصيل
+                </button>
+                <button  class="product-buy-btn">
+                  <i class="fas fa-heart"></i> حجز المنتج
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="product-card hot-sale-card" data-product-id="prodD">
+            <span
+              class="badge"
+              style="background: linear-gradient(45deg, #28a745, #20c997)"
+              >الأفضل مبيعاً</span
+            >
+            <div class="product-image-slider-wrapper">
+              <div class="product-image-slider" data-product-id="prodD">
+                <img
+                  src="course1.svg"
+                  alt="صورة المنتج 4-1"
+                  class="product-image active"
+                />
+                <img
+                  src="hero2.svg"
+                  alt="صورة المنتج 4-2"
+                  class="product-image"
+                />
+                <img
+                  src="hero3.svg"
+                  alt="صورة المنتج 4-3"
+                  class="product-image"
+                />
+              </div>
+              <button class="prev-btn" data-product-id="prodD">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+              <button class="next-btn" data-product-id="prodD">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+            </div>
+            <div class="card-content">
+              <span class="product-category">أنظمة إدارة</span>
+              <h3 class="product-title">نظام إدارة العملاء CRM</h3>
+              <p class="product-description">
+                نظام متكامل لإدارة العملاء والمبيعات مع لوحة تحكم احترافية
+                وتقارير تفصيلية
+              </p>
+              <ul class="spec-list">
+                <li><i class="fas fa-check-circle"></i> لوحة تحكم عربية</li>
+                <li><i class="fas fa-check-circle"></i> تقارير مفصلة</li>
+                <li><i class="fas fa-check-circle"></i> دعم فني مجاني</li>
+              </ul>
+              <div class="price-info">
+                <span class="old-price">500 ر.س</span>
+                <span class="new-price">349 ر.س</span>
+              </div>
+              <div class="rating-section">
+                <div class="stars">
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star gold"></i>
+                  <i class="fas fa-star-half-alt gold"></i>
+                  <span class="rating-text">(4.5)</span>
+                </div>
+                <button class="reviews-btn">
+                  <i class="far fa-comment"></i> 42 مراجعة
+                </button>
+              </div>
+              <div class="stock-status">
+                <i class="fas fa-cubes"></i> متوفر | ترخيص سنوي
+              </div>
+              <div class="product-actions">
+                <button class="details-btn">
+                  <i class="fas fa-info-circle"></i> تفاصيل
+                </button>
+                <button class="product-buy-btn">
+                  <i class="fas fa-heart"></i> حجز المنتج
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="about-us-section animate-on-scroll" id="about">
+        <h2>من نحن</h2>
+        <div class="about-content-wrapper">
+          <div class="about-image-container">
+            <img
+              src="اباوت.gif"
+              alt="صورة توضيحية عن الأكاديمية"
+              class="about-image"
+            />
+          </div>
+          <div>
+            <p class="about-description">
+              Royal Store هي منصة تعليمية متكاملة رائدة في العالم العربي، تقدم
+              مجموعة واسعة من الدورات الاحترافية، والملخصات القيّمة، والمتجر
+              الإلكتروني الذي يوفر لك الأدوات والمشاريع الجاهزة. هدفنا هو تمكين
+              كل شخص من تطوير مهاراته، وبدء وإنشاء مشروعه الخاص بنجاح.
+            </p>
+            <div class="stats-container">
+              <div class="stat-item">
+                <div class="counter" data-target="250">0</div>
+                <p class="stat-title">دورة</p>
+              </div>
+              <div class="stat-item">
+                <div class="counter" data-target="15000">0</div>
+                <p class="stat-title">طالب</p>
+              </div>
+              <div class="stat-item">
+                <div class="counter" data-target="500">0</div>
+                <p class="stat-title">مشروع منجز</p>
+              </div>
+              <div class="stat-item">
+                <div class="counter" data-target="98">0</div>
+                <p class="stat-title">% رضا العملاء</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer animate-footer">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <img src="logo.png" alt="شعار Royal Store الأبيض" class="logo" />
+        </div>
+
+        <div class="footer-links">
+          <a href="index.html">الرئيسية</a>
+          <a href="courses.html">الدورات</a>
+          <a href="summaries.html">الملخصات</a>
+          <a href="store.html">المتجر</a>
+          <a href="about.html">من نحن</a>
+          <a href="contact.html">اتصل بنا</a>
+        </div>
+
+        <div class="social-icons">
+          <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-linkedin-in"></i></a>
+          <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+
+      <div class="copyright">
+        &copy; جميع الحقوق محفوظة لـ زياد حجاج Zyad Haggag
+      </div>
+    </footer>
+
+    <script src="index.js"></script>
+  </body>
+</html>
